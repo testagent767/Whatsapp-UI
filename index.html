@@ -1,108 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>WhatsApp AI Demo UI</title>
+  <meta charset="UTF-8">
+  <title>WhatsApp AI UI Demo</title>
   <style>
-    body { margin:0; font-family: Arial; display:flex; height:100vh; background:#0f1b1f; color:#fff; }
-    #left { width:30%; border-right:1px solid #222; padding:10px; }
-    #right { flex:1; display:flex; flex-direction:column; }
-    .chat { padding:8px; border-bottom:1px solid #222; cursor:pointer; }
-    .chat:hover { background:#1b2a30; }
+    body { margin:0; font-family:Arial; background:#0f1b1f; color:#fff; display:flex; height:100vh; }
+    #chats { width:30%; border-right:1px solid #222; padding:10px; }
+    #chat { flex:1; display:flex; flex-direction:column; }
+    .item { padding:8px; border-bottom:1px solid #222; cursor:pointer; }
+    .item:hover { background:#1b2a30; }
     #messages { flex:1; padding:10px; overflow:auto; }
-    .msg.user { text-align:left; color:#ccc; }
-    .msg.bot { text-align:right; color:#4ade80; }
+    .user { color:#ccc; }
+    .bot { color:#4ade80; text-align:right; }
     #input { display:flex; }
-    input, button { padding:10px; border:none; }
-    input { flex:1; }
-    button { background:#22c55e; cursor:pointer; }
-    #top { padding:5px; background:#111; }
+    input,button { padding:10px; border:none; }
+    button { background:#22c55e; }
   </style>
 </head>
 <body>
 
-<div id="left">
-  <h3>Chats</h3>
-  <div id="chats"></div>
-</div>
+<div id="chats"></div>
 
-<div id="right">
-  <div id="top">
-    Webhook URL:
-    <input id="baseUrl" placeholder="https://xxxx/webhook/ui" style="width:60%">
-    <button onclick="saveUrl()">Save</button>
-  </div>
-
+<div id="chat">
   <div id="messages"></div>
-
   <div id="input">
-    <input id="text" placeholder="Type a message">
+    <input id="text" placeholder="Type message">
     <button onclick="send()">Send</button>
   </div>
 </div>
 
 <script>
-let BASE_URL = localStorage.getItem("BASE_URL") || "";
+const WEBHOOK_URL = "https://5wfq05ex.rpcld.cc/webhook/ui";
 let currentConversation = null;
 
-document.getElementById("baseUrl").value = BASE_URL;
-
-function saveUrl(){
-  BASE_URL = document.getElementById("baseUrl").value;
-  localStorage.setItem("BASE_URL", BASE_URL);
-  loadChats();
-}
-
-async function loadChats(){
-  const res = await fetch(BASE_URL, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ action:"getConversations" })
+async function loadChats() {
+  const res = await fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "getConversations" })
   });
   const data = await res.json();
-  const chats = document.getElementById("chats");
-  chats.innerHTML = "";
-  data.forEach(c=>{
-    const div = document.createElement("div");
-    div.className="chat";
-    div.innerText = c.name + " - " + c.last_message;
-    div.onclick=()=>loadMessages(c.conversation_id);
-    chats.appendChild(div);
-  });
-}
-
-async function loadMessages(id){
-  currentConversation = id;
-  const res = await fetch(BASE_URL,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body: JSON.stringify({ action:"getMessages", conversation_id:id })
-  });
-  const data = await res.json();
-  const box = document.getElementById("messages");
-  box.innerHTML="";
-  data.forEach(m=>{
-    const d=document.createElement("div");
-    d.className="msg "+m.from;
-    d.innerText=m.text;
+  const box = document.getElementById("chats");
+  box.innerHTML = "";
+  data.forEach(c => {
+    const d = document.createElement("div");
+    d.className = "item";
+    d.innerText = c.name;
+    d.onclick = () => loadMessages(c.conversation_id);
     box.appendChild(d);
   });
 }
 
-async function send(){
+async function loadMessages(id) {
+  currentConversation = id;
+  const res = await fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action:"getMessages", conversation_id:id })
+  });
+  const data = await res.json();
+  const box = document.getElementById("messages");
+  box.innerHTML = "";
+  data.forEach(m => {
+    const d = document.createElement("div");
+    d.className = m.from;
+    d.innerText = m.text;
+    box.appendChild(d);
+  });
+}
+
+async function send() {
   const text = document.getElementById("text").value;
-  document.getElementById("text").value="";
-  await fetch(BASE_URL,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
+  document.getElementById("text").value = "";
+  await fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      action:"sendMessage",
+      action: "sendMessage",
       conversation_id: currentConversation,
       text
     })
   });
   loadMessages(currentConversation);
 }
+
+loadChats();
 </script>
 
 </body>
