@@ -1,228 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WhatsApp Inbox Demo</title>
-
-<style>
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont;
-  background: #0b141a;
-  color: #e9edef;
-  height: 100vh;
-  display: flex;
-}
-
-/* Layout */
-.app {
-  display: flex;
-  width: 100%;
-  height: 100%;
-}
-
-/* Sidebar */
-.sidebar {
-  width: 320px;
-  background: #111b21;
-  border-right: 1px solid #202c33;
-  display: flex;
-  flex-direction: column;
-}
-
-.sidebar header {
-  padding: 12px;
-  font-weight: bold;
-  border-bottom: 1px solid #202c33;
-}
-
-.chat-list {
-  overflow-y: auto;
-  flex: 1;
-}
-
-.chat-item {
-  padding: 12px;
-  cursor: pointer;
-  border-bottom: 1px solid #202c33;
-}
-.chat-item:hover {
-  background: #202c33;
-}
-
-/* Chat area */
-.chat {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: #0b141a;
-}
-
-.chat-header {
-  padding: 12px;
-  border-bottom: 1px solid #202c33;
-}
-
-.messages {
-  flex: 1;
-  padding: 16px;
-  overflow-y: auto;
-  background-image: linear-gradient(
-    45deg,
-    #0b141a 25%,
-    #0e1621 25%,
-    #0e1621 50%,
-    #0b141a 50%,
-    #0b141a 75%,
-    #0e1621 75%,
-    #0e1621 100%
-  );
-  background-size: 40px 40px;
-}
-
-.message {
-  max-width: 70%;
-  margin-bottom: 8px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.user {
-  background: #005c4b;
-  margin-left: auto;
-}
-
-.bot {
-  background: #202c33;
-}
-
-/* Input */
-.input-area {
-  display: flex;
-  padding: 10px;
-  border-top: 1px solid #202c33;
-  background: #111b21;
-}
-
-.input-area input {
-  flex: 1;
-  padding: 10px;
-  background: #202c33;
-  border: none;
-  color: #fff;
-}
-
-.input-area button {
-  margin-left: 8px;
-  padding: 10px 14px;
-  background: #00a884;
-  border: none;
-  color: #000;
-  cursor: pointer;
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .sidebar { width: 100%; }
-  .chat { display: none; }
-}
-</style>
+  <meta charset="UTF-8" />
+  <title>WhatsApp AI Demo UI</title>
+  <style>
+    body { margin:0; font-family: Arial; display:flex; height:100vh; background:#0f1b1f; color:#fff; }
+    #left { width:30%; border-right:1px solid #222; padding:10px; }
+    #right { flex:1; display:flex; flex-direction:column; }
+    .chat { padding:8px; border-bottom:1px solid #222; cursor:pointer; }
+    .chat:hover { background:#1b2a30; }
+    #messages { flex:1; padding:10px; overflow:auto; }
+    .msg.user { text-align:left; color:#ccc; }
+    .msg.bot { text-align:right; color:#4ade80; }
+    #input { display:flex; }
+    input, button { padding:10px; border:none; }
+    input { flex:1; }
+    button { background:#22c55e; cursor:pointer; }
+    #top { padding:5px; background:#111; }
+  </style>
 </head>
-
 <body>
 
-<div class="app">
+<div id="left">
+  <h3>Chats</h3>
+  <div id="chats"></div>
+</div>
 
-  <div class="sidebar">
-    <header>
-      Inbox Demo<br/>
-      <input id="baseUrl" placeholder="Webhook URL" style="width:100%;margin-top:6px"/>
-      <button onclick="saveUrl()" style="width:100%;margin-top:4px">Save</button>
-    </header>
-    <div class="chat-list" id="chatList"></div>
+<div id="right">
+  <div id="top">
+    Webhook URL:
+    <input id="baseUrl" placeholder="https://xxxx/webhook/ui" style="width:60%">
+    <button onclick="saveUrl()">Save</button>
   </div>
 
-  <div class="chat" id="chat">
-    <div class="chat-header" id="chatHeader">Select a chat</div>
-    <div class="messages" id="messages"></div>
-    <div class="input-area">
-      <input id="msg" placeholder="Type a message"/>
-      <button onclick="send()">Send</button>
-    </div>
-  </div>
+  <div id="messages"></div>
 
+  <div id="input">
+    <input id="text" placeholder="Type a message">
+    <button onclick="send()">Send</button>
+  </div>
 </div>
 
 <script>
-let BASE_URL = localStorage.getItem("baseUrl");
+let BASE_URL = localStorage.getItem("BASE_URL") || "";
 let currentConversation = null;
 
-function saveUrl() {
+document.getElementById("baseUrl").value = BASE_URL;
+
+function saveUrl(){
   BASE_URL = document.getElementById("baseUrl").value;
-  localStorage.setItem("baseUrl", BASE_URL);
+  localStorage.setItem("BASE_URL", BASE_URL);
   loadChats();
 }
 
-function api(payload) {
-  return fetch(BASE_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  }).then(r => r.json());
-}
-
-function loadChats() {
-  api({ action: "getConversations" }).then(data => {
-    const list = document.getElementById("chatList");
-    list.innerHTML = "";
-    data.forEach(c => {
-      const div = document.createElement("div");
-      div.className = "chat-item";
-      div.innerHTML = `<b>${c.name}</b><br/>${c.last_message}`;
-      div.onclick = () => openChat(c);
-      list.appendChild(div);
-    });
+async function loadChats(){
+  const res = await fetch(BASE_URL, {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ action:"getConversations" })
+  });
+  const data = await res.json();
+  const chats = document.getElementById("chats");
+  chats.innerHTML = "";
+  data.forEach(c=>{
+    const div = document.createElement("div");
+    div.className="chat";
+    div.innerText = c.name + " - " + c.last_message;
+    div.onclick=()=>loadMessages(c.conversation_id);
+    chats.appendChild(div);
   });
 }
 
-function openChat(c) {
-  currentConversation = c.conversation_id;
-  document.getElementById("chat").style.display = "flex";
-  document.getElementById("chatHeader").innerText = c.name;
-
-  api({
-    action: "getMessages",
-    conversation_id: currentConversation
-  }).then(data => {
-    const box = document.getElementById("messages");
-    box.innerHTML = "";
-    data.forEach(m => {
-      const d = document.createElement("div");
-      d.className = "message " + (m.from === "user" ? "user" : "bot");
-      d.innerText = m.text;
-      box.appendChild(d);
-    });
-    box.scrollTop = box.scrollHeight;
+async function loadMessages(id){
+  currentConversation = id;
+  const res = await fetch(BASE_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ action:"getMessages", conversation_id:id })
+  });
+  const data = await res.json();
+  const box = document.getElementById("messages");
+  box.innerHTML="";
+  data.forEach(m=>{
+    const d=document.createElement("div");
+    d.className="msg "+m.from;
+    d.innerText=m.text;
+    box.appendChild(d);
   });
 }
 
-function send() {
-  const text = document.getElementById("msg").value;
-  if (!text) return;
-
-  api({
-    action: "sendMessage",
-    conversation_id: currentConversation,
-    text
-  }).then(() => openChat({ conversation_id: currentConversation, name: "" }));
-
-  document.getElementById("msg").value = "";
+async function send(){
+  const text = document.getElementById("text").value;
+  document.getElementById("text").value="";
+  await fetch(BASE_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      action:"sendMessage",
+      conversation_id: currentConversation,
+      text
+    })
+  });
+  loadMessages(currentConversation);
 }
-
-if (BASE_URL) loadChats();
 </script>
 
 </body>
