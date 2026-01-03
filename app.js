@@ -1,64 +1,51 @@
-
 const API =
   "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
-let activeConversation = null;
+let activeContact = null;
 
-/* ---------------- LOAD CONVERSATIONS ---------------- */
+/* ---------------- LOAD CONTACTS ---------------- */
 
-function loadConversations() {
+function loadContacts() {
   fetch(API)
     .then(res => res.json())
     .then(data => {
       const list = document.getElementById("chatList");
       list.innerHTML = "";
 
-      data.forEach(c => {
-        const conversationId =
-          c.conversation_id || c.phone_number || c.to || c.from;
-
-        const label =
-          c.phone_number ||
-          c.conversation_id ||
-          c.to ||
-          "Unknown";
+      data.forEach(item => {
+        // IGNORE BROKEN ROWS
+        if (!item.Phone_number && !item.Name) return;
 
         const div = document.createElement("div");
         div.className = "chat-item";
+
         div.innerHTML = `
-          <b>${label}</b><br/>
-          <small>${c.last_message_preview || ""}</small>
+          <div class="name">${item.Name || item.Phone_number}</div>
+          <div class="preview">${item.Last_message_preview || ""}</div>
         `;
 
-        div.onclick = () => loadMessages(conversationId, label);
+        div.onclick = () => selectChat(item);
         list.appendChild(div);
       });
     })
-    .catch(err => console.error("Conversation load error", err));
+    .catch(err => console.error("Load contacts error:", err));
 }
 
-/* ---------------- LOAD MESSAGES ---------------- */
+/* ---------------- SELECT CHAT ---------------- */
 
-function loadMessages(conversationId, label) {
-  activeConversation = conversationId;
-  document.getElementById("chatHeader").textContent = label;
+function selectChat(contact) {
+  activeContact = contact;
 
-  fetch(`${API}?conversation_id=${conversationId}`)
-    .then(res => res.json())
-    .then(data => {
-      const box = document.getElementById("messages");
-      box.innerHTML = "";
+  document.getElementById("chatHeader").innerText =
+    contact.Name || contact.Phone_number;
 
-      data.forEach(m => {
-        const div = document.createElement("div");
-        div.className = `msg ${m.direction || "inbound"}`;
-        div.textContent = m.text || "";
-        box.appendChild(div);
-      });
-
-      box.scrollTop = box.scrollHeight;
-    })
-    .catch(err => console.error("Message load error", err));
+  const messages = document.getElementById("messages");
+  messages.innerHTML = `
+    <div class="placeholder">
+      Messages for <b>${contact.Phone_number}</b><br /><br />
+      ⚠ Backend does not provide message history yet.
+    </div>
+  `;
 }
 
 /* ---------------- SEND MESSAGE ---------------- */
@@ -67,37 +54,21 @@ function sendMessage() {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
 
-  if (!text || !activeConversation) return;
-
-  // optimistic UI
-  const box = document.getElementById("messages");
-  const div = document.createElement("div");
-  div.className = "msg outbound";
-  div.textContent = text;
-  box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
-
-  input.value = "";
+  if (!text || !activeContact) return;
 
   fetch(API, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      conversation_id: activeConversation,
-      text: text,
-      direction: "outbound",
-      status: "sent"
+      to: activeContact.Phone_number,
+      text: text
     })
-  }).catch(err => console.error("Send error", err));
+  });
+
+  input.value = "";
 }
 
-/* ---------------- POLLING ---------------- */
+/* ---------------- INIT + POLLING ---------------- */
 
-loadConversations();
-setInterval(loadConversations, 2000);
-
-if (activeConversation) {
-  setInterval(() => {
-    loadMessages(activeConversation);
-  }, 2000);
-}
+loadContacts();
+setInterval(loadContacts, 2000);
