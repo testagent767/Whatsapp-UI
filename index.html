@@ -1,91 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>WhatsApp AI UI Demo</title>
-  <style>
-    body { margin:0; font-family:Arial; background:#0f1b1f; color:#fff; display:flex; height:100vh; }
-    #chats { width:30%; border-right:1px solid #222; padding:10px; }
-    #chat { flex:1; display:flex; flex-direction:column; }
-    .item { padding:8px; border-bottom:1px solid #222; cursor:pointer; }
-    .item:hover { background:#1b2a30; }
-    #messages { flex:1; padding:10px; overflow:auto; }
-    .user { color:#ccc; }
-    .bot { color:#4ade80; text-align:right; }
-    #input { display:flex; }
-    input,button { padding:10px; border:none; }
-    button { background:#22c55e; }
-  </style>
+  <meta charset="UTF-8" />
+  <title>WhatsApp Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div id="chats"></div>
+<div id="app">
+  <div id="sidebar">
+    <h3>Chats</h3>
+    <div id="chatList"></div>
+  </div>
 
-<div id="chat">
-  <div id="messages"></div>
-  <div id="input">
-    <input id="text" placeholder="Type message">
-    <button onclick="send()">Send</button>
+  <div id="chat">
+    <div id="messages"></div>
+
+    <div id="inputBar">
+      <input id="messageInput" placeholder="Type a message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
   </div>
 </div>
 
-<script>
-const WEBHOOK_URL = "https://5wfq05ex.rpcld.cc/webhook/ui";
-let currentConversation = null;
-
-async function loadChats() {
-  const res = await fetch(WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "getConversations" })
-  });
-  const data = await res.json();
-  const box = document.getElementById("chats");
-  box.innerHTML = "";
-  data.forEach(c => {
-    const d = document.createElement("div");
-    d.className = "item";
-    d.innerText = c.name;
-    d.onclick = () => loadMessages(c.conversation_id);
-    box.appendChild(d);
-  });
-}
-
-async function loadMessages(id) {
-  currentConversation = id;
-  const res = await fetch(WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action:"getMessages", conversation_id:id })
-  });
-  const data = await res.json();
-  const box = document.getElementById("messages");
-  box.innerHTML = "";
-  data.forEach(m => {
-    const d = document.createElement("div");
-    d.className = m.from;
-    d.innerText = m.text;
-    box.appendChild(d);
-  });
-}
-
-async function send() {
-  const text = document.getElementById("text").value;
-  document.getElementById("text").value = "";
-  await fetch(WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "sendMessage",
-      conversation_id: currentConversation,
-      text
-    })
-  });
-  loadMessages(currentConversation);
-}
-
-loadChats();
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
