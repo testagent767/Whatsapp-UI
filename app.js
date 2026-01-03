@@ -1,30 +1,47 @@
+
 const API =
   "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
 let activeConversation = null;
 
-// Load conversations
-fetch(API)
-  .then(res => res.json())
-  .then(data => {
-    const list = document.getElementById("chatList");
-    list.innerHTML = "";
+/* ---------------- LOAD CONVERSATIONS ---------------- */
 
-    data.forEach(c => {
-      const div = document.createElement("div");
-      div.className = "chat-item";
-      div.innerHTML = `
-        <b>${c.phone_number}</b><br/>
-        <small>${c.last_message_preview || ""}</small>
-      `;
-      div.onclick = () => loadMessages(c.conversation_id);
-      list.appendChild(div);
-    });
-  });
+function loadConversations() {
+  fetch(API)
+    .then(res => res.json())
+    .then(data => {
+      const list = document.getElementById("chatList");
+      list.innerHTML = "";
 
-// Load messages
-function loadMessages(conversationId) {
+      data.forEach(c => {
+        const conversationId =
+          c.conversation_id || c.phone_number || c.to || c.from;
+
+        const label =
+          c.phone_number ||
+          c.conversation_id ||
+          c.to ||
+          "Unknown";
+
+        const div = document.createElement("div");
+        div.className = "chat-item";
+        div.innerHTML = `
+          <b>${label}</b><br/>
+          <small>${c.last_message_preview || ""}</small>
+        `;
+
+        div.onclick = () => loadMessages(conversationId, label);
+        list.appendChild(div);
+      });
+    })
+    .catch(err => console.error("Conversation load error", err));
+}
+
+/* ---------------- LOAD MESSAGES ---------------- */
+
+function loadMessages(conversationId, label) {
   activeConversation = conversationId;
+  document.getElementById("chatHeader").textContent = label;
 
   fetch(`${API}?conversation_id=${conversationId}`)
     .then(res => res.json())
@@ -34,19 +51,22 @@ function loadMessages(conversationId) {
 
       data.forEach(m => {
         const div = document.createElement("div");
-        div.className = `msg ${m.direction}`;
-        div.textContent = m.text;
+        div.className = `msg ${m.direction || "inbound"}`;
+        div.textContent = m.text || "";
         box.appendChild(div);
       });
 
       box.scrollTop = box.scrollHeight;
-    });
+    })
+    .catch(err => console.error("Message load error", err));
 }
 
-// Send message
+/* ---------------- SEND MESSAGE ---------------- */
+
 function sendMessage() {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
+
   if (!text || !activeConversation) return;
 
   // optimistic UI
@@ -64,7 +84,20 @@ function sendMessage() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       conversation_id: activeConversation,
-      text: text
+      text: text,
+      direction: "outbound",
+      status: "sent"
     })
-  });
+  }).catch(err => console.error("Send error", err));
+}
+
+/* ---------------- POLLING ---------------- */
+
+loadConversations();
+setInterval(loadConversations, 2000);
+
+if (activeConversation) {
+  setInterval(() => {
+    loadMessages(activeConversation);
+  }, 2000);
 }
