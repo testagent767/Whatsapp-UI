@@ -2,31 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>WhatsApp Dashboard</title>
+  <title>WhatsApp Panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div id="app">
-  <div id="sidebar">
+<div class="app">
+
+  <!-- LEFT: CONTACT LIST -->
+  <div class="sidebar">
     <div class="header">Chats</div>
     <div id="chatList"></div>
   </div>
 
-  <div id="chat">
+  <!-- RIGHT: CHAT VIEW -->
+  <div class="chat">
     <div class="header" id="chatHeader">Select a chat</div>
-    <div id="messages"></div>
 
-    <div id="inputBar">
-      <input
-        id="messageInput"
-        type="text"
-        placeholder="Type a message"
-      />
+    <div class="messages" id="messages">
+      <div class="placeholder">
+        No messages loaded.<br />
+        Your backend currently returns only contacts.
+      </div>
+    </div>
+
+    <div class="inputBar">
+      <input id="messageInput" placeholder="Type a message" />
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
+
 </div>
 
 <script src="app.js"></script>
