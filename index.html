@@ -1,23 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>WhatsApp Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
 <div id="app">
   <div id="sidebar">
-    <h3>Chats</h3>
+    <div class="header">Chats</div>
     <div id="chatList"></div>
   </div>
 
   <div id="chat">
+    <div class="header" id="chatHeader">Select a chat</div>
     <div id="messages"></div>
 
     <div id="inputBar">
-      <input id="messageInput" placeholder="Type a message..." />
+      <input
+        id="messageInput"
+        type="text"
+        placeholder="Type a message"
+      />
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
