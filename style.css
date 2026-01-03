@@ -9,29 +9,29 @@ body {
   height: 100vh;
 }
 
-#app {
+.app {
   display: flex;
   height: 100vh;
 }
 
 /* SIDEBAR */
-#sidebar {
+.sidebar {
   width: 35%;
   border-right: 1px solid #ddd;
+  background: #f5f5f5;
   overflow-y: auto;
-  background: #f8f9fa;
 }
 
 .header {
   padding: 12px;
   font-weight: bold;
+  background: #ffffff;
   border-bottom: 1px solid #ddd;
-  background: #fff;
 }
 
 .chat-item {
   padding: 10px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e0e0e0;
   cursor: pointer;
 }
 
@@ -39,53 +39,48 @@ body {
   background: #eaeaea;
 }
 
+.chat-item .name {
+  font-weight: bold;
+}
+
+.chat-item .preview {
+  font-size: 12px;
+  color: #666;
+}
+
 /* CHAT */
-#chat {
+.chat {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-#messages {
+.messages {
   flex: 1;
-  padding: 10px;
-  overflow-y: auto;
+  padding: 12px;
   background: #efeae2;
+  overflow-y: auto;
 }
 
-.msg {
-  max-width: 70%;
-  padding: 8px 10px;
-  margin-bottom: 8px;
-  border-radius: 6px;
+.placeholder {
+  color: #666;
   font-size: 14px;
 }
 
-.msg.inbound {
-  background: #fff;
-  align-self: flex-start;
-}
-
-.msg.outbound {
-  background: #dcf8c6;
-  align-self: flex-end;
-  text-align: right;
-}
-
-#inputBar {
+.inputBar {
   display: flex;
   padding: 10px;
-  border-top: 1px solid #ddd;
   background: #fff;
+  border-top: 1px solid #ddd;
 }
 
-#messageInput {
+.inputBar input {
   flex: 1;
   padding: 8px;
   font-size: 14px;
 }
 
-button {
+.inputBar button {
   margin-left: 8px;
   padding: 8px 12px;
 }
