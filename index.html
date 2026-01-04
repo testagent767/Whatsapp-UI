@@ -8,29 +8,28 @@
 </head>
 <body>
   <div class="app">
-    <!-- LEFT: CONTACTS -->
+
+    <!-- LEFT -->
     <div class="sidebar">
       <div class="sidebar-header">Chats</div>
       <div id="contacts" class="contacts"></div>
     </div>
 
-    <!-- RIGHT: CHAT -->
+    <!-- RIGHT -->
     <div class="chat">
       <div id="chat-header" class="chat-header">
-        Select a contact
+        <span id="chat-phone">Select a contact</span>
+        <span class="chat-plus">+</span>
       </div>
 
       <div id="messages" class="messages"></div>
 
       <div class="chat-input">
-        <input
-          id="messageInput"
-          type="text"
-          placeholder="Type a message"
-        />
+        <input id="messageInput" type="text" placeholder="Type a message" />
         <button id="sendBtn">Send</button>
       </div>
     </div>
+
   </div>
 
   <script src="app.js"></script>
