@@ -3,14 +3,15 @@ const WEBHOOK =
 
 let selectedConversationId = null;
 let pollInterval = null;
+let localMessages = [];
 
-/* LOAD CONTACTS */
+/* CONTACTS */
 async function loadContacts() {
   const res = await fetch(WEBHOOK);
   const data = await res.json();
 
-  const contactsDiv = document.getElementById("contacts");
-  contactsDiv.innerHTML = "";
+  const contacts = document.getElementById("contacts");
+  contacts.innerHTML = "";
 
   data.forEach(c => {
     if (!c.Phone_number) return;
@@ -19,20 +20,18 @@ async function loadContacts() {
     div.className = "contact";
     div.innerText = c.Name || c.Phone_number;
 
-    div.onclick = () => {
-      selectConversation(c.Phone_number, c.Name);
-    };
+    div.onclick = () => selectConversation(c.Phone_number);
 
-    contactsDiv.appendChild(div);
+    contacts.appendChild(div);
   });
 }
 
 /* SELECT CHAT */
-function selectConversation(conversationId, name) {
+function selectConversation(conversationId) {
   selectedConversationId = conversationId;
-  document.getElementById("chat-header").innerText =
-    name || conversationId;
+  document.getElementById("chat-phone").innerText = conversationId;
 
+  localMessages = [];
   loadMessages();
 
   if (pollInterval) clearInterval(pollInterval);
@@ -46,70 +45,84 @@ async function loadMessages() {
   const res = await fetch(
     `${WEBHOOK}?conversation_id=${selectedConversationId}`
   );
-  const data = await res.json();
+  const backendMessages = await res.json();
 
-  const messagesDiv = document.getElementById("messages");
-  messagesDiv.innerHTML = "";
+  localMessages = backendMessages;
+  renderMessages();
+}
 
-  // sort by timestamp
-  data.sort(
-    (a, b) => new Date(a.Timestamp) - new Date(b.Timestamp)
+/* RENDER */
+function renderMessages() {
+  const container = document.getElementById("messages");
+  container.innerHTML = "";
+
+  localMessages.sort(
+    (a, b) => new Date(a.Timestamp || a.timestamp) - new Date(b.Timestamp || b.timestamp)
   );
 
   let lastDate = "";
 
-  data.forEach(msg => {
-    const msgDate = new Date(msg.Timestamp).toDateString();
+  localMessages.forEach(msg => {
+    const time = new Date(msg.Timestamp || msg.timestamp);
+    const dateLabel = time.toDateString();
 
-    if (msgDate !== lastDate) {
+    if (dateLabel !== lastDate) {
       const dateDiv = document.createElement("div");
       dateDiv.className = "date-divider";
-      dateDiv.innerText = msgDate;
-      messagesDiv.appendChild(dateDiv);
-      lastDate = msgDate;
+      dateDiv.innerText = dateLabel;
+      container.appendChild(dateDiv);
+      lastDate = dateLabel;
     }
 
     const bubble = document.createElement("div");
-    bubble.className = "message";
+    bubble.className = `message ${msg.direction === "outbound" ? "outbound" : "inbound"}`;
+    bubble.innerText = msg.Text || msg.text;
 
-    if (msg.direction === "outbound") {
-      bubble.classList.add("outbound");
-    } else {
-      bubble.classList.add("inbound");
-    }
+    const timeSpan = document.createElement("span");
+    timeSpan.className = "message-time";
+    timeSpan.innerText =
+      time.getHours().toString().padStart(2, "0") +
+      ":" +
+      time.getMinutes().toString().padStart(2, "0");
 
-    bubble.innerText = msg.Text;
-    messagesDiv.appendChild(bubble);
+    bubble.appendChild(timeSpan);
+    container.appendChild(bubble);
   });
 
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  container.scrollTop = container.scrollHeight;
 }
 
-/* SEND MESSAGE */
+/* SEND (OPTIMISTIC) */
 document.getElementById("sendBtn").onclick = async () => {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
-
   if (!text || !selectedConversationId) return;
 
-  const payload = {
-    conversation_id: selectedConversationId,
-    from: "905452722489",
-    to: selectedConversationId,
-    text: text,
+  const now = new Date();
+
+  const optimisticMessage = {
+    text,
     direction: "outbound",
-    status: "sent",
-    timestamp: new Date().toISOString()
+    timestamp: now.toISOString()
   };
+
+  localMessages.push(optimisticMessage);
+  renderMessages();
+  input.value = "";
 
   await fetch(WEBHOOK, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({
+      conversation_id: selectedConversationId,
+      from: "905452722489",
+      to: selectedConversationId,
+      text,
+      direction: "outbound",
+      status: "sent",
+      timestamp: now.toISOString()
+    })
   });
-
-  input.value = "";
-  loadMessages();
 };
 
 /* INIT */
