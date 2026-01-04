@@ -2,7 +2,7 @@ const WEBHOOK =
   "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
 let selectedConversationId = null;
-let selectedContactElement = null;
+let selectedContactEl = null;
 let contactsCache = {};
 let pollInterval = null;
 let localMessages = [];
@@ -12,8 +12,8 @@ async function loadContacts() {
   const res = await fetch(WEBHOOK);
   const data = await res.json();
 
-  const contacts = document.getElementById("contacts");
-  contacts.innerHTML = "";
+  const contactsDiv = document.getElementById("contacts");
+  contactsDiv.innerHTML = "";
 
   data.forEach(c => {
     if (!c.Phone_number) return;
@@ -26,19 +26,19 @@ async function loadContacts() {
 
     div.onclick = () => selectConversation(c.Phone_number, div);
 
-    contacts.appendChild(div);
+    contactsDiv.appendChild(div);
   });
 }
 
-/* SELECT CHAT */
+/* SELECT CONVERSATION */
 function selectConversation(conversationId, element) {
   selectedConversationId = conversationId;
 
-  if (selectedContactElement) {
-    selectedContactElement.classList.remove("active");
+  if (selectedContactEl) {
+    selectedContactEl.classList.remove("active");
   }
   element.classList.add("active");
-  selectedContactElement = element;
+  selectedContactEl = element;
 
   const contact = contactsCache[conversationId];
   document.getElementById("chat-name").innerText =
@@ -63,31 +63,34 @@ async function loadMessages() {
   renderMessages();
 }
 
-/* RENDER */
+/* RENDER MESSAGES */
 function renderMessages() {
   const container = document.getElementById("messages");
   container.innerHTML = "";
 
   localMessages.sort(
-    (a, b) => new Date(a.Timestamp || a.timestamp) - new Date(b.Timestamp || b.timestamp)
+    (a, b) =>
+      new Date(a.Timestamp || a.timestamp) -
+      new Date(b.Timestamp || b.timestamp)
   );
 
   let lastDate = "";
 
   localMessages.forEach(msg => {
     const time = new Date(msg.Timestamp || msg.timestamp);
-    const dateLabel = time.toDateString();
+    const day = time.toDateString();
 
-    if (dateLabel !== lastDate) {
-      const dateDiv = document.createElement("div");
-      dateDiv.className = "date-divider";
-      dateDiv.innerText = dateLabel;
-      container.appendChild(dateDiv);
-      lastDate = dateLabel;
+    if (day !== lastDate) {
+      const divider = document.createElement("div");
+      divider.className = "date-divider";
+      divider.innerText = day;
+      container.appendChild(divider);
+      lastDate = day;
     }
 
     const bubble = document.createElement("div");
-    bubble.className = `message ${msg.direction === "outbound" ? "outbound" : "inbound"}`;
+    bubble.className =
+      "message " + (msg.direction === "outbound" ? "outbound" : "inbound");
     bubble.innerText = msg.Text || msg.text;
 
     const timeSpan = document.createElement("span");
@@ -104,7 +107,7 @@ function renderMessages() {
   container.scrollTop = container.scrollHeight;
 }
 
-/* SEND (OPTIMISTIC UI) */
+/* SEND MESSAGE (OPTIMISTIC UI) */
 document.getElementById("sendBtn").onclick = async () => {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
