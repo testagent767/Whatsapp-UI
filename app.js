@@ -33,10 +33,9 @@ function loadContacts() {
 
 /* ---------------- OPEN CHAT ---------------- */
 
-function openChat(phoneNumber, label) {
-  activeConversationId = phoneNumber;
+function openChat(phone, label) {
+  activeConversationId = phone;
   document.getElementById("chatHeader").innerText = label;
-
   loadMessages();
 }
 
@@ -51,16 +50,32 @@ function loadMessages() {
       const box = document.getElementById("messages");
       box.innerHTML = "";
 
-      if (!data.length) {
+      if (!Array.isArray(data) || data.length === 0) {
         box.innerHTML = "<div>No messages</div>";
         return;
       }
 
+      // SORT BY TIMESTAMP
+      data.sort(
+        (a, b) => new Date(a.Timestamp) - new Date(b.Timestamp)
+      );
+
       data.forEach(m => {
-        const div = document.createElement("div");
-        div.className = `msg ${m.direction || "inbound"}`;
-        div.textContent = m.text || m.body || "";
-        box.appendChild(div);
+        const dir =
+          m.direction === "outbond" || m.direction === "outbound"
+            ? "outbound"
+            : "inbound";
+
+        const msg = document.createElement("div");
+        msg.className = `msg ${dir}`;
+        msg.innerHTML = `
+          <div>${m.Text || ""}</div>
+          <div class="time">
+            ${new Date(m.Timestamp).toLocaleTimeString()}
+          </div>
+        `;
+
+        box.appendChild(msg);
       });
 
       box.scrollTop = box.scrollHeight;
@@ -72,15 +87,14 @@ function loadMessages() {
 function sendMessage() {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
-
   if (!text || !activeConversationId) return;
 
   // optimistic UI
   const box = document.getElementById("messages");
-  const div = document.createElement("div");
-  div.className = "msg outbound";
-  div.textContent = text;
-  box.appendChild(div);
+  const msg = document.createElement("div");
+  msg.className = "msg outbound";
+  msg.innerHTML = `<div>${text}</div>`;
+  box.appendChild(msg);
   box.scrollTop = box.scrollHeight;
 
   fetch(BASE_API, {
@@ -89,8 +103,8 @@ function sendMessage() {
     body: JSON.stringify({
       conversation_id: activeConversationId,
       to: activeConversationId,
-      text: text,
-      direction: "outbound"
+      Text: text,
+      direction: "outbond"
     })
   });
 
