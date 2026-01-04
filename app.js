@@ -1,20 +1,19 @@
-const API =
+const BASE_API =
   "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
-let activeContact = null;
+let activeConversationId = null;
 
 /* ---------------- LOAD CONTACTS ---------------- */
 
 function loadContacts() {
-  fetch(API)
+  fetch(BASE_API)
     .then(res => res.json())
     .then(data => {
       const list = document.getElementById("chatList");
       list.innerHTML = "";
 
       data.forEach(item => {
-        // IGNORE BROKEN ROWS
-        if (!item.Phone_number && !item.Name) return;
+        if (!item.Phone_number) return;
 
         const div = document.createElement("div");
         div.className = "chat-item";
@@ -24,28 +23,48 @@ function loadContacts() {
           <div class="preview">${item.Last_message_preview || ""}</div>
         `;
 
-        div.onclick = () => selectChat(item);
+        div.onclick = () =>
+          openChat(item.Phone_number, item.Name || item.Phone_number);
+
         list.appendChild(div);
       });
-    })
-    .catch(err => console.error("Load contacts error:", err));
+    });
 }
 
-/* ---------------- SELECT CHAT ---------------- */
+/* ---------------- OPEN CHAT ---------------- */
 
-function selectChat(contact) {
-  activeContact = contact;
+function openChat(phoneNumber, label) {
+  activeConversationId = phoneNumber;
+  document.getElementById("chatHeader").innerText = label;
 
-  document.getElementById("chatHeader").innerText =
-    contact.Name || contact.Phone_number;
+  loadMessages();
+}
 
-  const messages = document.getElementById("messages");
-  messages.innerHTML = `
-    <div class="placeholder">
-      Messages for <b>${contact.Phone_number}</b><br /><br />
-      ⚠ Backend does not provide message history yet.
-    </div>
-  `;
+/* ---------------- LOAD MESSAGES ---------------- */
+
+function loadMessages() {
+  if (!activeConversationId) return;
+
+  fetch(`${BASE_API}?conversation_id=${activeConversationId}`)
+    .then(res => res.json())
+    .then(data => {
+      const box = document.getElementById("messages");
+      box.innerHTML = "";
+
+      if (!data.length) {
+        box.innerHTML = "<div>No messages</div>";
+        return;
+      }
+
+      data.forEach(m => {
+        const div = document.createElement("div");
+        div.className = `msg ${m.direction || "inbound"}`;
+        div.textContent = m.text || m.body || "";
+        box.appendChild(div);
+      });
+
+      box.scrollTop = box.scrollHeight;
+    });
 }
 
 /* ---------------- SEND MESSAGE ---------------- */
@@ -54,21 +73,35 @@ function sendMessage() {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
 
-  if (!text || !activeContact) return;
+  if (!text || !activeConversationId) return;
 
-  fetch(API, {
+  // optimistic UI
+  const box = document.getElementById("messages");
+  const div = document.createElement("div");
+  div.className = "msg outbound";
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+
+  fetch(BASE_API, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      to: activeContact.Phone_number,
-      text: text
+      conversation_id: activeConversationId,
+      to: activeConversationId,
+      text: text,
+      direction: "outbound"
     })
   });
 
   input.value = "";
 }
 
-/* ---------------- INIT + POLLING ---------------- */
+/* ---------------- POLLING ---------------- */
 
 loadContacts();
-setInterval(loadContacts, 2000);
+setInterval(loadContacts, 3000);
+
+setInterval(() => {
+  if (activeConversationId) loadMessages();
+}, 3000);
