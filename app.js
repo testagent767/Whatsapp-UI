@@ -2,10 +2,12 @@ const WEBHOOK =
   "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
 let selectedConversationId = null;
+let selectedContactElement = null;
+let contactsCache = {};
 let pollInterval = null;
 let localMessages = [];
 
-/* CONTACTS */
+/* LOAD CONTACTS */
 async function loadContacts() {
   const res = await fetch(WEBHOOK);
   const data = await res.json();
@@ -16,19 +18,31 @@ async function loadContacts() {
   data.forEach(c => {
     if (!c.Phone_number) return;
 
+    contactsCache[c.Phone_number] = c;
+
     const div = document.createElement("div");
     div.className = "contact";
     div.innerText = c.Name || c.Phone_number;
 
-    div.onclick = () => selectConversation(c.Phone_number);
+    div.onclick = () => selectConversation(c.Phone_number, div);
 
     contacts.appendChild(div);
   });
 }
 
 /* SELECT CHAT */
-function selectConversation(conversationId) {
+function selectConversation(conversationId, element) {
   selectedConversationId = conversationId;
+
+  if (selectedContactElement) {
+    selectedContactElement.classList.remove("active");
+  }
+  element.classList.add("active");
+  selectedContactElement = element;
+
+  const contact = contactsCache[conversationId];
+  document.getElementById("chat-name").innerText =
+    contact?.Name || "Unknown";
   document.getElementById("chat-phone").innerText = conversationId;
 
   localMessages = [];
@@ -45,9 +59,7 @@ async function loadMessages() {
   const res = await fetch(
     `${WEBHOOK}?conversation_id=${selectedConversationId}`
   );
-  const backendMessages = await res.json();
-
-  localMessages = backendMessages;
+  localMessages = await res.json();
   renderMessages();
 }
 
@@ -92,7 +104,7 @@ function renderMessages() {
   container.scrollTop = container.scrollHeight;
 }
 
-/* SEND (OPTIMISTIC) */
+/* SEND (OPTIMISTIC UI) */
 document.getElementById("sendBtn").onclick = async () => {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
@@ -100,13 +112,12 @@ document.getElementById("sendBtn").onclick = async () => {
 
   const now = new Date();
 
-  const optimisticMessage = {
+  localMessages.push({
     text,
     direction: "outbound",
     timestamp: now.toISOString()
-  };
+  });
 
-  localMessages.push(optimisticMessage);
   renderMessages();
   input.value = "";
 
