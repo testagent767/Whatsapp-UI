@@ -1,3 +1,4 @@
+
 * {
   box-sizing: border-box;
   font-family: Arial, sans-serif;
@@ -28,7 +29,7 @@ body {
 }
 
 .contact {
-  padding: 12px;
+  padding: 10px 12px;
   cursor: pointer;
   border-bottom: 1px solid #eee;
 }
@@ -39,6 +40,17 @@ body {
 
 .contact.active {
   background: #d9fdd3;
+}
+
+.contact-name {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.contact-preview {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
 }
 
 /* CHAT */
@@ -79,7 +91,7 @@ body {
   color: #666;
 }
 
-/* MESSAGE BUBBLES */
+/* MESSAGE */
 .message {
   max-width: 70%;
   padding: 8px 12px 16px;
