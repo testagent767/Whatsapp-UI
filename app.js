@@ -1,3 +1,4 @@
+
 const WEBHOOK =
   "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
@@ -10,7 +11,18 @@ let localMessages = [];
 /* LOAD CONTACTS */
 async function loadContacts() {
   const res = await fetch(WEBHOOK);
-  const data = await res.json();
+  let data = await res.json();
+
+  /* SORT BY LAST MESSAGE TIMESTAMP DESC */
+  data.sort((a, b) => {
+    const t1 = a.Last_message_timestamp
+      ? new Date(a.Last_message_timestamp).getTime()
+      : 0;
+    const t2 = b.Last_message_timestamp
+      ? new Date(b.Last_message_timestamp).getTime()
+      : 0;
+    return t2 - t1;
+  });
 
   const contactsDiv = document.getElementById("contacts");
   contactsDiv.innerHTML = "";
@@ -22,7 +34,23 @@ async function loadContacts() {
 
     const div = document.createElement("div");
     div.className = "contact";
-    div.innerText = c.Name || c.Phone_number;
+    div.dataset.phone = c.Phone_number;
+
+    if (c.Phone_number === selectedConversationId) {
+      div.classList.add("active");
+      selectedContactEl = div;
+    }
+
+    const name = document.createElement("div");
+    name.className = "contact-name";
+    name.innerText = c.Name || c.Phone_number;
+
+    const preview = document.createElement("div");
+    preview.className = "contact-preview";
+    preview.innerText = c.Last_message_preview || "";
+
+    div.appendChild(name);
+    div.appendChild(preview);
 
     div.onclick = () => selectConversation(c.Phone_number, div);
 
@@ -30,7 +58,7 @@ async function loadContacts() {
   });
 }
 
-/* SELECT CONVERSATION */
+/* SELECT CHAT */
 function selectConversation(conversationId, element) {
   selectedConversationId = conversationId;
 
@@ -107,7 +135,7 @@ function renderMessages() {
   container.scrollTop = container.scrollHeight;
 }
 
-/* SEND MESSAGE (OPTIMISTIC UI) */
+/* SEND (OPTIMISTIC UI) */
 document.getElementById("sendBtn").onclick = async () => {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
@@ -115,12 +143,12 @@ document.getElementById("sendBtn").onclick = async () => {
 
   const now = new Date();
 
+  /* Optimistic message */
   localMessages.push({
     text,
     direction: "outbound",
     timestamp: now.toISOString()
   });
-
   renderMessages();
   input.value = "";
 
@@ -137,6 +165,9 @@ document.getElementById("sendBtn").onclick = async () => {
       timestamp: now.toISOString()
     })
   });
+
+  /* Reload contacts to update order + preview */
+  loadContacts();
 };
 
 /* INIT */
