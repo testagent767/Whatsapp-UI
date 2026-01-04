@@ -1,148 +1,116 @@
-
-const BASE_API =
+const WEBHOOK =
   "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
-const MY_NUMBER = "905452722489";
-let activeConversationId = null;
+let selectedConversationId = null;
+let pollInterval = null;
 
-/* ---------------- CONTACTS ---------------- */
+/* LOAD CONTACTS */
+async function loadContacts() {
+  const res = await fetch(WEBHOOK);
+  const data = await res.json();
 
-function loadContacts() {
-  fetch(BASE_API)
-    .then(res => res.json())
-    .then(data => {
-      const list = document.getElementById("chatList");
-      list.innerHTML = "";
+  const contactsDiv = document.getElementById("contacts");
+  contactsDiv.innerHTML = "";
 
-      data.forEach(item => {
-        if (!item.Phone_number) return;
+  data.forEach(c => {
+    if (!c.Phone_number) return;
 
-        const div = document.createElement("div");
-        div.className = "chat-item";
-        div.innerHTML = `
-          <div class="name">${item.Name || item.Phone_number}</div>
-          <div class="preview">${item.Last_message_preview || ""}</div>
-        `;
+    const div = document.createElement("div");
+    div.className = "contact";
+    div.innerText = c.Name || c.Phone_number;
 
-        div.onclick = () =>
-          openChat(item.Phone_number, item.Name || item.Phone_number);
+    div.onclick = () => {
+      selectConversation(c.Phone_number, c.Name);
+    };
 
-        list.appendChild(div);
-      });
-    });
+    contactsDiv.appendChild(div);
+  });
 }
 
-/* ---------------- OPEN CHAT ---------------- */
+/* SELECT CHAT */
+function selectConversation(conversationId, name) {
+  selectedConversationId = conversationId;
+  document.getElementById("chat-header").innerText =
+    name || conversationId;
 
-function openChat(phone, label) {
-  activeConversationId = phone;
-  document.getElementById("chatHeader").innerText = label;
   loadMessages();
+
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(loadMessages, 10000);
 }
 
-/* ---------------- DATE LABEL ---------------- */
+/* LOAD MESSAGES */
+async function loadMessages() {
+  if (!selectedConversationId) return;
 
-function formatDateLabel(dateStr) {
-  const d = new Date(dateStr);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
+  const res = await fetch(
+    `${WEBHOOK}?conversation_id=${selectedConversationId}`
+  );
+  const data = await res.json();
 
-  if (d.toDateString() === today.toDateString()) return "Today";
-  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
-  return d.toLocaleDateString();
+  const messagesDiv = document.getElementById("messages");
+  messagesDiv.innerHTML = "";
+
+  // sort by timestamp
+  data.sort(
+    (a, b) => new Date(a.Timestamp) - new Date(b.Timestamp)
+  );
+
+  let lastDate = "";
+
+  data.forEach(msg => {
+    const msgDate = new Date(msg.Timestamp).toDateString();
+
+    if (msgDate !== lastDate) {
+      const dateDiv = document.createElement("div");
+      dateDiv.className = "date-divider";
+      dateDiv.innerText = msgDate;
+      messagesDiv.appendChild(dateDiv);
+      lastDate = msgDate;
+    }
+
+    const bubble = document.createElement("div");
+    bubble.className = "message";
+
+    if (msg.direction === "outbound") {
+      bubble.classList.add("outbound");
+    } else {
+      bubble.classList.add("inbound");
+    }
+
+    bubble.innerText = msg.Text;
+    messagesDiv.appendChild(bubble);
+  });
+
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-/* ---------------- LOAD MESSAGES ---------------- */
-
-function loadMessages() {
-  if (!activeConversationId) return;
-
-  fetch(`${BASE_API}?conversation_id=${activeConversationId}`)
-    .then(res => res.json())
-    .then(data => {
-      const box = document.getElementById("messages");
-      box.innerHTML = "";
-
-      if (!Array.isArray(data) || data.length === 0) return;
-
-      data.sort(
-        (a, b) => new Date(a.Timestamp) - new Date(b.Timestamp)
-      );
-
-      let lastDate = null;
-
-      data.forEach(m => {
-        const currentDate = formatDateLabel(m.Timestamp);
-
-        if (currentDate !== lastDate) {
-          const dateDiv = document.createElement("div");
-          dateDiv.className = "date-separator";
-          dateDiv.textContent = currentDate;
-          box.appendChild(dateDiv);
-          lastDate = currentDate;
-        }
-
-        const dir =
-          m.direction === "outbond" || m.direction === "outbound"
-            ? "outbound"
-            : "inbound";
-
-        const msg = document.createElement("div");
-        msg.className = `msg ${dir}`;
-        msg.innerHTML = `
-          <div>${m.Text || m.text || ""}</div>
-          <div class="time">
-            ${new Date(m.Timestamp).toLocaleTimeString()}
-          </div>
-        `;
-
-        box.appendChild(msg);
-      });
-
-      box.scrollTop = box.scrollHeight;
-    });
-}
-
-/* ---------------- SEND MESSAGE (NEW JSON) ---------------- */
-
-function sendMessage() {
+/* SEND MESSAGE */
+document.getElementById("sendBtn").onclick = async () => {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
-  if (!text || !activeConversationId) return;
 
-  const now = new Date().toISOString();
+  if (!text || !selectedConversationId) return;
 
-  // optimistic UI
-  const box = document.getElementById("messages");
-  const msg = document.createElement("div");
-  msg.className = "msg outbound";
-  msg.innerHTML = `<div>${text}</div>`;
-  box.appendChild(msg);
-  box.scrollTop = box.scrollHeight;
+  const payload = {
+    conversation_id: selectedConversationId,
+    from: "905452722489",
+    to: selectedConversationId,
+    text: text,
+    direction: "outbound",
+    status: "sent",
+    timestamp: new Date().toISOString()
+  };
 
-  fetch(BASE_API, {
+  await fetch(WEBHOOK, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      conversation_id: activeConversationId,
-      from: MY_NUMBER,
-      to: activeConversationId,
-      text: text,
-      direction: "outbound",
-      status: "sent",
-      timestamp: now
-    })
+    body: JSON.stringify(payload)
   });
 
   input.value = "";
-}
+  loadMessages();
+};
 
-/* ---------------- POLLING (10s) ---------------- */
-
+/* INIT */
 loadContacts();
-setInterval(loadContacts, 10000);
-
-setInterval(() => {
-  if (activeConversationId) loadMessages();
-}, 10000);
