@@ -1,33 +1,38 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>WhatsApp UI</title>
+  <title>WhatsApp UI Clone</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="app">
+    <!-- LEFT: CONTACTS -->
+    <div class="sidebar">
+      <div class="sidebar-header">Chats</div>
+      <div id="contacts" class="contacts"></div>
+    </div>
 
-<div class="app">
+    <!-- RIGHT: CHAT -->
+    <div class="chat">
+      <div id="chat-header" class="chat-header">
+        Select a contact
+      </div>
 
-  <div class="sidebar">
-    <div class="header">Chats</div>
-    <div id="chatList"></div>
-  </div>
+      <div id="messages" class="messages"></div>
 
-  <div class="chat">
-    <div class="header" id="chatHeader">Select a chat</div>
-    <div class="messages" id="messages"></div>
-
-    <div class="inputBar">
-      <input id="messageInput" placeholder="Type a message" />
-      <button onclick="sendMessage()">Send</button>
+      <div class="chat-input">
+        <input
+          id="messageInput"
+          type="text"
+          placeholder="Type a message"
+        />
+        <button id="sendBtn">Send</button>
+      </div>
     </div>
   </div>
 
-</div>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
