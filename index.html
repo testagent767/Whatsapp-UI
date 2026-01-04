@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>WhatsApp Panel</title>
+  <title>WhatsApp Web Clone</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -10,22 +10,16 @@
 
 <div class="app">
 
-  <!-- LEFT: CONTACT LIST -->
+  <!-- CONTACT LIST -->
   <div class="sidebar">
     <div class="header">Chats</div>
     <div id="chatList"></div>
   </div>
 
-  <!-- RIGHT: CHAT VIEW -->
+  <!-- CHAT -->
   <div class="chat">
     <div class="header" id="chatHeader">Select a chat</div>
-
-    <div class="messages" id="messages">
-      <div class="placeholder">
-        No messages loaded.<br />
-        Your backend currently returns only contacts.
-      </div>
-    </div>
+    <div class="messages" id="messages"></div>
 
     <div class="inputBar">
       <input id="messageInput" placeholder="Type a message" />
