@@ -1,9 +1,11 @@
+
 const BASE_API =
   "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
+const MY_NUMBER = "905452722489";
 let activeConversationId = null;
 
-/* ---------------- LOAD CONTACTS ---------------- */
+/* ---------------- CONTACTS ---------------- */
 
 function loadContacts() {
   fetch(BASE_API)
@@ -17,7 +19,6 @@ function loadContacts() {
 
         const div = document.createElement("div");
         div.className = "chat-item";
-
         div.innerHTML = `
           <div class="name">${item.Name || item.Phone_number}</div>
           <div class="preview">${item.Last_message_preview || ""}</div>
@@ -39,6 +40,19 @@ function openChat(phone, label) {
   loadMessages();
 }
 
+/* ---------------- DATE LABEL ---------------- */
+
+function formatDateLabel(dateStr) {
+  const d = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (d.toDateString() === today.toDateString()) return "Today";
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return d.toLocaleDateString();
+}
+
 /* ---------------- LOAD MESSAGES ---------------- */
 
 function loadMessages() {
@@ -50,17 +64,25 @@ function loadMessages() {
       const box = document.getElementById("messages");
       box.innerHTML = "";
 
-      if (!Array.isArray(data) || data.length === 0) {
-        box.innerHTML = "<div>No messages</div>";
-        return;
-      }
+      if (!Array.isArray(data) || data.length === 0) return;
 
-      // SORT BY TIMESTAMP
       data.sort(
         (a, b) => new Date(a.Timestamp) - new Date(b.Timestamp)
       );
 
+      let lastDate = null;
+
       data.forEach(m => {
+        const currentDate = formatDateLabel(m.Timestamp);
+
+        if (currentDate !== lastDate) {
+          const dateDiv = document.createElement("div");
+          dateDiv.className = "date-separator";
+          dateDiv.textContent = currentDate;
+          box.appendChild(dateDiv);
+          lastDate = currentDate;
+        }
+
         const dir =
           m.direction === "outbond" || m.direction === "outbound"
             ? "outbound"
@@ -69,7 +91,7 @@ function loadMessages() {
         const msg = document.createElement("div");
         msg.className = `msg ${dir}`;
         msg.innerHTML = `
-          <div>${m.Text || ""}</div>
+          <div>${m.Text || m.text || ""}</div>
           <div class="time">
             ${new Date(m.Timestamp).toLocaleTimeString()}
           </div>
@@ -82,12 +104,14 @@ function loadMessages() {
     });
 }
 
-/* ---------------- SEND MESSAGE ---------------- */
+/* ---------------- SEND MESSAGE (NEW JSON) ---------------- */
 
 function sendMessage() {
   const input = document.getElementById("messageInput");
   const text = input.value.trim();
   if (!text || !activeConversationId) return;
+
+  const now = new Date().toISOString();
 
   // optimistic UI
   const box = document.getElementById("messages");
@@ -102,20 +126,23 @@ function sendMessage() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       conversation_id: activeConversationId,
+      from: MY_NUMBER,
       to: activeConversationId,
-      Text: text,
-      direction: "outbond"
+      text: text,
+      direction: "outbound",
+      status: "sent",
+      timestamp: now
     })
   });
 
   input.value = "";
 }
 
-/* ---------------- POLLING ---------------- */
+/* ---------------- POLLING (10s) ---------------- */
 
 loadContacts();
-setInterval(loadContacts, 3000);
+setInterval(loadContacts, 10000);
 
 setInterval(() => {
   if (activeConversationId) loadMessages();
-}, 3000);
+}, 10000);
