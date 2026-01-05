@@ -3,10 +3,13 @@ const WEBHOOK =
 
 let contacts = [];
 let selectedContact = null;
+let messagePoller = null;
+let contactPoller = null;
 
-/* ---------- CONTACTS ---------- */
-
-async function fetchContacts() {
+/* =====================
+   LOAD CONTACTS
+===================== */
+async function loadContacts() {
   const res = await fetch(WEBHOOK);
   contacts = await res.json();
 
@@ -19,130 +22,181 @@ async function fetchContacts() {
   renderContacts();
 }
 
+/* =====================
+   CONTACT POLLING (10s)
+===================== */
+function startContactPolling() {
+  if (contactPoller) clearInterval(contactPoller);
+  contactPoller = setInterval(loadContacts, 10000);
+}
+
+/* =====================
+   RENDER CONTACTS
+===================== */
 function renderContacts() {
-  const el = document.getElementById("contacts");
-  el.innerHTML = "";
+  const list = document.getElementById("contactList");
+  list.innerHTML = "";
 
   contacts.forEach((c) => {
-    const div = document.createElement("div");
-    div.className = "contact";
-    if (selectedContact?.Phone_number === c.Phone_number)
-      div.classList.add("active");
+    const li = document.createElement("li");
+    li.className = "contact";
 
-    div.innerHTML = `
-      <div class="contact-top">
-        <span class="name">${c.Name}</span>
-        <span class="toggle" onclick="toggleAI(event,'${c.Phone_number}',${c.automate_response})">
-          ${c.automate_response ? "🤖" : "✋"}
-        </span>
-      </div>
-      <div class="contact-top">
-        <span class="preview">${c.Last_message_preview || ""}</span>
-        ${c.unread ? `<span class="dot"></span>` : ""}
-      </div>
+    if (
+      selectedContact &&
+      selectedContact.Phone_number === c.Phone_number
+    ) {
+      li.classList.add("active");
+    }
+
+    li.onclick = () => selectContact(c);
+
+    li.innerHTML = `
+      <div class="contact-name">${c.Name || "Unknown"}</div>
+      <div class="contact-preview">${c.Last_message_preview || ""}</div>
+      ${c.unread ? `<span class="unread-dot"></span>` : ""}
     `;
 
-    div.onclick = () => selectContact(c);
-    el.appendChild(div);
+    list.appendChild(li);
   });
 }
 
-async function toggleAI(e, phone, current) {
-  e.stopPropagation();
-
-  await fetch(WEBHOOK, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      conversation_id: phone,
-      automate_response: !current,
-    }),
-  });
-
-  fetchContacts();
-}
-
-/* ---------- SELECT CONTACT ---------- */
-
+/* =====================
+   SELECT CONTACT
+===================== */
 async function selectContact(contact) {
   selectedContact = contact;
 
-  document.getElementById("chatHeader").innerText =
-    `${contact.Name} • ${contact.Phone_number}`;
+  document.getElementById("chatName").innerText =
+    contact.Name || "Unknown";
+  document.getElementById("chatNumber").innerText =
+    contact.Phone_number || "";
 
-  // optimistic unread
-  contact.unread = false;
+  updateToggle(contact.automate_response);
+  document.getElementById("toggleBtn").disabled = false;
+
+  // OPTIMISTIC UNREAD OFF
+  if (contact.unread) {
+    contact.unread = false;
+    renderContacts();
+
+    await fetch(WEBHOOK, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        conversation_id: contact.Phone_number,
+        unread: false,
+      }),
+    });
+  }
+
   renderContacts();
+  await loadMessages(contact.Phone_number);
+  startMessagePolling(contact.Phone_number);
+}
+
+/* =====================
+   TOGGLE 🤖 / ✋
+===================== */
+function updateToggle(isAuto) {
+  document.getElementById("toggleBtn").innerText =
+    isAuto ? "🤖" : "✋";
+}
+
+document.getElementById("toggleBtn").onclick = async () => {
+  if (!selectedContact) return;
+
+  const newValue = !selectedContact.automate_response;
+  selectedContact.automate_response = newValue;
+  updateToggle(newValue);
 
   await fetch(WEBHOOK, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      conversation_id: contact.Phone_number,
-      unread: false,
+      conversation_id: selectedContact.Phone_number,
+      automate_response: newValue,
     }),
   });
+};
 
-  startMessagesPolling();
-}
-
-/* ---------- MESSAGES ---------- */
-
-async function fetchMessages() {
-  if (!selectedContact) return;
-
+/* =====================
+   LOAD MESSAGES
+===================== */
+async function loadMessages(conversationId) {
   const res = await fetch(
-    `${WEBHOOK}?conversation_id=${selectedContact.Phone_number}`
+    `${WEBHOOK}?conversation_id=${conversationId}`
   );
-  const msgs = await res.json();
-  renderMessages(msgs);
+  const data = await res.json();
+
+  const box = document.getElementById("messages");
+  box.innerHTML = "";
+
+  data
+    .sort(
+      (a, b) => new Date(a.Timestamp) - new Date(b.Timestamp)
+    )
+    .forEach(renderMessage);
+
+  box.scrollTop = box.scrollHeight;
 }
 
-function renderMessages(msgs) {
-  const el = document.getElementById("messages");
-  el.innerHTML = "";
+/* =====================
+   RENDER MESSAGE
+===================== */
+function renderMessage(m) {
+  const box = document.getElementById("messages");
 
-  let lastDay = null;
+  const div = document.createElement("div");
+  div.className = `message ${
+    m.direction === "outbound" ? "outbound" : "inbound"
+  }`;
 
-  msgs
-    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-    .forEach((m) => {
-      const day = new Date(m.timestamp).toDateString();
-      if (day !== lastDay) {
-        el.innerHTML += `<div class="day">${day}</div>`;
-        lastDay = day;
-      }
+  div.innerHTML = `
+    <div>${m.Text || ""}</div>
+    <div class="time">
+      ${new Date(m.Timestamp).toLocaleTimeString()}
+    </div>
+  `;
 
-      el.innerHTML += `
-        <div class="msg ${m.direction}">
-          <div class="bubble">${m.text}</div>
-          <div class="time">
-            ${new Date(m.timestamp).toLocaleTimeString()}
-          </div>
-        </div>
-      `;
-    });
-
-  el.scrollTop = el.scrollHeight;
+  box.appendChild(div);
 }
 
-/* ---------- SEND ---------- */
+/* =====================
+   MESSAGE POLLING (2s)
+===================== */
+function startMessagePolling(conversationId) {
+  if (messagePoller) clearInterval(messagePoller);
 
-async function sendMessage() {
-  if (!selectedContact) return;
+  messagePoller = setInterval(() => {
+    if (selectedContact) {
+      loadMessages(conversationId);
+    }
+  }, 2000);
+}
 
-  const input = document.getElementById("textInput");
-  const text = input.value.trim();
-  if (!text) return;
+/* =====================
+   SEND MESSAGE (OPTIMISTIC)
+===================== */
+document.getElementById("sendBtn").onclick = async () => {
+  const input = document.getElementById("messageInput");
+  if (!input.value || !selectedContact) return;
+
+  const temp = {
+    Text: input.value,
+    direction: "outbound",
+    Timestamp: new Date().toISOString(),
+  };
+
+  renderMessage(temp);
 
   const payload = {
     conversation_id: selectedContact.Phone_number,
     from: "905452722489",
     to: selectedContact.Phone_number,
-    text,
+    text: temp.Text,
     direction: "outbound",
     status: "sent",
-    timestamp: new Date().toISOString(),
+    timestamp: temp.Timestamp,
   };
 
   input.value = "";
@@ -153,11 +207,11 @@ async function sendMessage() {
     body: JSON.stringify(payload),
   });
 
-  fetchMessages();
-}
+  loadContacts();
+};
 
-/* ---------- POLLING ---------- */
-
-fetchContacts();
-setInterval(fetchContacts, 10000);
-setInterval(fetchMessages, 2000);
+/* =====================
+   INIT
+===================== */
+loadContacts();
+startContactPolling();
