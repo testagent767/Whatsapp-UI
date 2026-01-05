@@ -1,7 +1,11 @@
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
   font-family: Arial, sans-serif;
+  background: #f0f2f5;
 }
 
 .app {
@@ -12,18 +16,22 @@ body {
 /* LEFT */
 .sidebar {
   width: 30%;
+  background: #ffffff;
   border-right: 1px solid #ddd;
   overflow-y: auto;
 }
 
 .sidebar h2 {
-  padding: 10px;
+  padding: 12px;
+  margin: 0;
+  background: #075e54;
+  color: white;
 }
 
 .sidebar ul {
   list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
 }
 
 .contact {
@@ -31,8 +39,12 @@ body {
   cursor: pointer;
 }
 
+.contact:hover {
+  background: #f5f5f5;
+}
+
 .contact.active {
-  background: #eaeaea;
+  background: #e6e6e6;
 }
 
 .contact-name {
@@ -49,11 +61,13 @@ body {
   width: 70%;
   display: flex;
   flex-direction: column;
+  background: #efeae2;
 }
 
 .chat-header {
   padding: 10px;
-  border-bottom: 1px solid #ddd;
+  background: #075e54;
+  color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -61,7 +75,7 @@ body {
 
 .number {
   font-size: 12px;
-  color: #666;
+  color: #ddd;
 }
 
 .toggle {
@@ -69,6 +83,7 @@ body {
   background: none;
   border: none;
   cursor: pointer;
+  color: white;
 }
 
 .messages {
@@ -86,7 +101,7 @@ body {
 }
 
 .inbound {
-  background: #fff;
+  background: white;
   border: 1px solid #ddd;
 }
 
@@ -104,7 +119,7 @@ body {
 .input-area {
   display: flex;
   padding: 10px;
-  border-top: 1px solid #ddd;
+  background: #f0f0f0;
 }
 
 input {
