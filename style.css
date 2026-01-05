@@ -1,10 +1,6 @@
-* {
-  box-sizing: border-box;
-}
-
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   background: #f0f2f5;
 }
 
@@ -13,120 +9,121 @@ body {
   height: 100vh;
 }
 
-/* LEFT */
+/* SIDEBAR */
 .sidebar {
   width: 30%;
-  background: #ffffff;
+  background: white;
   border-right: 1px solid #ddd;
-  overflow-y: auto;
 }
 
-.sidebar h2 {
-  padding: 12px;
-  margin: 0;
-  background: #075e54;
-  color: white;
-}
-
-.sidebar ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.sidebar-header {
+  padding: 15px;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
 }
 
 .contact {
-  padding: 10px;
+  padding: 12px;
   cursor: pointer;
-}
-
-.contact:hover {
-  background: #f5f5f5;
+  border-bottom: 1px solid #eee;
 }
 
 .contact.active {
-  background: #e6e6e6;
+  background: #e5f3ff;
 }
 
-.contact-name {
-  font-weight: bold;
-}
-
-.contact-preview {
-  font-size: 12px;
-  color: #555;
-}
-
-/* RIGHT */
-.chat {
-  width: 70%;
-  display: flex;
-  flex-direction: column;
-  background: #efeae2;
-}
-
-.chat-header {
-  padding: 10px;
-  background: #075e54;
-  color: white;
+.contact-top {
   display: flex;
   justify-content: space-between;
-  align-items: center;
 }
 
-.number {
+.name {
+  font-weight: 500;
+}
+
+.preview {
   font-size: 12px;
-  color: #ddd;
+  color: #666;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  background: #25d366;
+  border-radius: 50%;
 }
 
 .toggle {
-  font-size: 22px;
-  background: none;
-  border: none;
   cursor: pointer;
-  color: white;
+}
+
+/* CHAT */
+.chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  padding: 15px;
+  background: #ededed;
+  font-weight: bold;
+  border-bottom: 1px solid #ccc;
 }
 
 .messages {
   flex: 1;
-  padding: 10px;
+  padding: 15px;
   overflow-y: auto;
+  background: #efeae2;
 }
 
-.message {
+.day {
+  text-align: center;
+  font-size: 12px;
+  color: #555;
+  margin: 10px 0;
+}
+
+.msg {
   max-width: 70%;
   margin-bottom: 8px;
-  padding: 8px;
-  border-radius: 6px;
-  font-size: 14px;
 }
 
 .inbound {
-  background: white;
-  border: 1px solid #ddd;
+  align-self: flex-start;
 }
 
 .outbound {
+  align-self: flex-end;
+}
+
+.bubble {
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.inbound .bubble {
+  background: white;
+}
+
+.outbound .bubble {
   background: #dcf8c6;
-  margin-left: auto;
 }
 
 .time {
   font-size: 10px;
-  color: #666;
   text-align: right;
+  color: #555;
 }
 
-.input-area {
+.chat-input {
   display: flex;
   padding: 10px;
   background: #f0f0f0;
 }
 
-input {
+.chat-input input {
   flex: 1;
   padding: 8px;
-}
-
-button {
-  margin-left: 8px;
 }
