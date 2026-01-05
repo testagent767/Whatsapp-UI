@@ -1,174 +1,172 @@
-
 const WEBHOOK =
   "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
-let selectedConversationId = null;
-let selectedContactEl = null;
-let contactsCache = {};
-let pollInterval = null;
-let localMessages = [];
+let contacts = [];
+let selectedContact = null;
 
-/* LOAD CONTACTS */
+/* =========================
+   LOAD CONTACTS
+========================= */
 async function loadContacts() {
   const res = await fetch(WEBHOOK);
-  let data = await res.json();
+  contacts = await res.json();
 
-  /* SORT BY LAST MESSAGE TIMESTAMP DESC */
-  data.sort((a, b) => {
-    const t1 = a.Last_message_timestamp
-      ? new Date(a.Last_message_timestamp).getTime()
-      : 0;
-    const t2 = b.Last_message_timestamp
-      ? new Date(b.Last_message_timestamp).getTime()
-      : 0;
-    return t2 - t1;
-  });
-
-  const contactsDiv = document.getElementById("contacts");
-  contactsDiv.innerHTML = "";
-
-  data.forEach(c => {
-    if (!c.Phone_number) return;
-
-    contactsCache[c.Phone_number] = c;
-
-    const div = document.createElement("div");
-    div.className = "contact";
-    div.dataset.phone = c.Phone_number;
-
-    if (c.Phone_number === selectedConversationId) {
-      div.classList.add("active");
-      selectedContactEl = div;
-    }
-
-    const name = document.createElement("div");
-    name.className = "contact-name";
-    name.innerText = c.Name || c.Phone_number;
-
-    const preview = document.createElement("div");
-    preview.className = "contact-preview";
-    preview.innerText = c.Last_message_preview || "";
-
-    div.appendChild(name);
-    div.appendChild(preview);
-
-    div.onclick = () => selectConversation(c.Phone_number, div);
-
-    contactsDiv.appendChild(div);
-  });
-}
-
-/* SELECT CHAT */
-function selectConversation(conversationId, element) {
-  selectedConversationId = conversationId;
-
-  if (selectedContactEl) {
-    selectedContactEl.classList.remove("active");
-  }
-  element.classList.add("active");
-  selectedContactEl = element;
-
-  const contact = contactsCache[conversationId];
-  document.getElementById("chat-name").innerText =
-    contact?.Name || "Unknown";
-  document.getElementById("chat-phone").innerText = conversationId;
-
-  localMessages = [];
-  loadMessages();
-
-  if (pollInterval) clearInterval(pollInterval);
-  pollInterval = setInterval(loadMessages, 10000);
-}
-
-/* LOAD MESSAGES */
-async function loadMessages() {
-  if (!selectedConversationId) return;
-
-  const res = await fetch(
-    `${WEBHOOK}?conversation_id=${selectedConversationId}`
-  );
-  localMessages = await res.json();
-  renderMessages();
-}
-
-/* RENDER MESSAGES */
-function renderMessages() {
-  const container = document.getElementById("messages");
-  container.innerHTML = "";
-
-  localMessages.sort(
+  // order by last message timestamp (newest first)
+  contacts.sort(
     (a, b) =>
-      new Date(a.Timestamp || a.timestamp) -
-      new Date(b.Timestamp || b.timestamp)
+      new Date(b.Last_message_timestamp) -
+      new Date(a.Last_message_timestamp)
   );
 
-  let lastDate = "";
-
-  localMessages.forEach(msg => {
-    const time = new Date(msg.Timestamp || msg.timestamp);
-    const day = time.toDateString();
-
-    if (day !== lastDate) {
-      const divider = document.createElement("div");
-      divider.className = "date-divider";
-      divider.innerText = day;
-      container.appendChild(divider);
-      lastDate = day;
-    }
-
-    const bubble = document.createElement("div");
-    bubble.className =
-      "message " + (msg.direction === "outbound" ? "outbound" : "inbound");
-    bubble.innerText = msg.Text || msg.text;
-
-    const timeSpan = document.createElement("span");
-    timeSpan.className = "message-time";
-    timeSpan.innerText =
-      time.getHours().toString().padStart(2, "0") +
-      ":" +
-      time.getMinutes().toString().padStart(2, "0");
-
-    bubble.appendChild(timeSpan);
-    container.appendChild(bubble);
-  });
-
-  container.scrollTop = container.scrollHeight;
+  renderContacts();
 }
 
-/* SEND (OPTIMISTIC UI) */
+/* =========================
+   RENDER CONTACTS (LEFT)
+========================= */
+function renderContacts() {
+  const list = document.getElementById("contactList");
+  list.innerHTML = "";
+
+  contacts.forEach((c) => {
+    const li = document.createElement("li");
+    li.className = "contact";
+
+    if (
+      selectedContact &&
+      selectedContact.Phone_number === c.Phone_number
+    ) {
+      li.classList.add("active");
+    }
+
+    li.onclick = () => selectContact(c);
+
+    li.innerHTML = `
+      <div class="contact-name">${c.Name || "Unknown"}</div>
+      <div class="contact-preview">${c.Last_message_preview || ""}</div>
+    `;
+
+    list.appendChild(li);
+  });
+}
+
+/* =========================
+   SELECT CONTACT
+========================= */
+async function selectContact(contact) {
+  selectedContact = contact;
+
+  document.getElementById("chatName").innerText =
+    contact.Name || "Unknown";
+  document.getElementById("chatNumber").innerText =
+    contact.Phone_number || "";
+
+  updateToggle(contact.automate_response);
+
+  const toggleBtn = document.getElementById("toggleBtn");
+  toggleBtn.disabled = false;
+
+  renderContacts();
+  loadMessages(contact.Phone_number);
+}
+
+/* =========================
+   TOGGLE (🤖 / ✋)
+========================= */
+function updateToggle(isAuto) {
+  const btn = document.getElementById("toggleBtn");
+  btn.innerText = isAuto ? "🤖" : "✋";
+}
+
+document.getElementById("toggleBtn").onclick = async () => {
+  if (!selectedContact) return;
+
+  const newValue = !selectedContact.automate_response;
+
+  // optimistic UI
+  selectedContact.automate_response = newValue;
+  updateToggle(newValue);
+
+  await fetch(WEBHOOK, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      conversation_id: selectedContact.Phone_number,
+      automate_response: newValue,
+    }),
+  });
+};
+
+/* =========================
+   LOAD MESSAGES (RIGHT)
+========================= */
+async function loadMessages(conversationId) {
+  const res = await fetch(
+    `${WEBHOOK}?conversation_id=${conversationId}`
+  );
+  const data = await res.json();
+
+  const box = document.getElementById("messages");
+  box.innerHTML = "";
+
+  // order by timestamp ASC
+  data
+    .sort(
+      (a, b) => new Date(a.Timestamp) - new Date(b.Timestamp)
+    )
+    .forEach((m) => {
+      const div = document.createElement("div");
+      div.className = `message ${
+        m.direction === "outbound" ? "outbound" : "inbound"
+      }`;
+
+      div.innerHTML = `
+        <div>${m.Text || ""}</div>
+        <div class="time">
+          ${new Date(m.Timestamp).toLocaleTimeString()}
+        </div>
+      `;
+
+      box.appendChild(div);
+    });
+
+  box.scrollTop = box.scrollHeight;
+}
+
+/* =========================
+   SEND MESSAGE
+========================= */
 document.getElementById("sendBtn").onclick = async () => {
   const input = document.getElementById("messageInput");
-  const text = input.value.trim();
-  if (!text || !selectedConversationId) return;
+  if (!input.value || !selectedContact) return;
 
-  const now = new Date();
-
-  /* Optimistic message */
-  localMessages.push({
-    text,
+  const payload = {
+    conversation_id: selectedContact.Phone_number,
+    from: "905452722489",
+    to: selectedContact.Phone_number,
+    text: input.value,
     direction: "outbound",
-    timestamp: now.toISOString()
-  });
-  renderMessages();
+    status: "sent",
+    timestamp: new Date().toISOString(),
+  };
+
+  // optimistic UI
   input.value = "";
 
   await fetch(WEBHOOK, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      conversation_id: selectedConversationId,
-      from: "905452722489",
-      to: selectedConversationId,
-      text,
-      direction: "outbound",
-      status: "sent",
-      timestamp: now.toISOString()
-    })
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
   });
 
-  /* Reload contacts to update order + preview */
-  loadContacts();
+  loadMessages(selectedContact.Phone_number);
 };
 
-/* INIT */
+/* =========================
+   INIT
+========================= */
 loadContacts();
