@@ -37,7 +37,7 @@ body {
 .contact {
   padding: 10px;
   cursor: pointer;
-  position: relative;
+  position: relative; /* REQUIRED */
 }
 
 .contact:hover {
@@ -57,7 +57,7 @@ body {
   color: #555;
 }
 
-/* UNREAD DOT */
+/* UNREAD GREEN DOT */
 .unread-dot {
   width: 10px;
   height: 10px;
@@ -66,6 +66,7 @@ body {
   position: absolute;
   right: 12px;
   top: 18px;
+  z-index: 10;
 }
 
 /* RIGHT */
