@@ -50,10 +50,13 @@ function renderContacts() {
 
     li.onclick = () => selectContact(c);
 
+    const isUnread =
+      c.unread === true || c.unread === "true";
+
     li.innerHTML = `
       <div class="contact-name">${c.Name || "Unknown"}</div>
       <div class="contact-preview">${c.Last_message_preview || ""}</div>
-      ${c.unread ? `<span class="unread-dot"></span>` : ""}
+      ${isUnread ? `<span class="unread-dot"></span>` : ""}
     `;
 
     list.appendChild(li);
@@ -75,7 +78,7 @@ async function selectContact(contact) {
   document.getElementById("toggleBtn").disabled = false;
 
   // OPTIMISTIC UNREAD OFF
-  if (contact.unread) {
+  if (contact.unread === true || contact.unread === "true") {
     contact.unread = false;
     renderContacts();
 
