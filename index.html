@@ -1,39 +1,27 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>WhatsApp UI</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>WhatsApp Demo</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="app">
-
-  <!-- LEFT -->
   <div class="sidebar">
-    <h2>Chats</h2>
-    <ul id="contactList"></ul>
+    <div class="sidebar-header">Contacts</div>
+    <div id="contacts"></div>
   </div>
 
-  <!-- RIGHT -->
   <div class="chat">
-    <div class="chat-header">
-      <div>
-        <div id="chatName">Select a contact</div>
-        <div id="chatNumber" class="number"></div>
-      </div>
-      <button id="toggleBtn" class="toggle" disabled>🤖</button>
-    </div>
+    <div class="chat-header" id="chatHeader">Select a contact</div>
+    <div class="messages" id="messages"></div>
 
-    <div id="messages" class="messages"></div>
-
-    <div class="input-area">
-      <input id="messageInput" placeholder="Type a message..." />
-      <button id="sendBtn">Send</button>
+    <div class="chat-input">
+      <input id="textInput" placeholder="Type a message">
+      <button onclick="sendMessage()">Send</button>
     </div>
   </div>
-
 </div>
 
 <script src="app.js"></script>
