@@ -218,3 +218,48 @@ document.getElementById("sendBtn").onclick = async () => {
 ===================== */
 loadContacts();
 startContactPolling();
+
+
+
+
+/* =====================
+   SEND MESSAGE (DYNAMIC, CORRECT)
+===================== */
+document.getElementById("sendBtn").onclick = async () => {
+  if (!selectedContact) return;
+
+  const input = document.getElementById("messageInput");
+  const text = input.value.trim();
+  if (!text) return;
+
+  const payload = {
+    conversation_id: selectedContact.Phone_number, // dynamic
+    from: "905452722489",                           // dashboard number
+    to: selectedContact.Phone_number,               // dynamic
+    text: text,                                     // from input
+    direction: "outbound",
+    status: "sent",
+    timestamp: new Date().toISOString(),
+  };
+
+  // Optimistic UI
+  renderMessage({
+    direction: "outbound",
+    Text: text,
+    Timestamp: payload.timestamp,
+  });
+
+  input.value = "";
+
+  try {
+    await fetch(WEBHOOK, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.error("Send failed", err);
+  }
+
+  loadContacts();
+};
