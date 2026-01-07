@@ -1,3 +1,4 @@
+
 * {
   box-sizing: border-box;
 }
@@ -8,14 +9,22 @@ body {
   background: #f0f2f5;
 }
 
+/* =====================
+   LAYOUT
+===================== */
 .app {
   display: flex;
   height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
-/* LEFT */
+/* =====================
+   LEFT / SIDEBAR
+===================== */
 .sidebar {
   width: 30%;
+  min-width: 260px;
   background: #ffffff;
   border-right: 1px solid #ddd;
   overflow-y: auto;
@@ -37,7 +46,8 @@ body {
 .contact {
   padding: 10px;
   cursor: pointer;
-  position: relative; /* REQUIRED */
+  position: relative;
+  border-bottom: 1px solid #eee;
 }
 
 .contact:hover {
@@ -55,6 +65,7 @@ body {
 .contact-preview {
   font-size: 12px;
   color: #555;
+  margin-top: 2px;
 }
 
 /* UNREAD GREEN DOT */
@@ -66,12 +77,13 @@ body {
   position: absolute;
   right: 12px;
   top: 18px;
-  z-index: 10;
 }
 
-/* RIGHT */
+/* =====================
+   RIGHT / CHAT
+===================== */
 .chat {
-  width: 70%;
+  flex: 1;
   display: flex;
   flex-direction: column;
   background: #efeae2;
@@ -99,6 +111,9 @@ body {
   color: white;
 }
 
+/* =====================
+   MESSAGES
+===================== */
 .messages {
   flex: 1;
   padding: 10px;
@@ -106,11 +121,12 @@ body {
 }
 
 .message {
-  max-width: 70%;
+  max-width: 75%;
   margin-bottom: 8px;
   padding: 8px;
   border-radius: 6px;
   font-size: 14px;
+  word-wrap: break-word;
 }
 
 .inbound {
@@ -127,8 +143,12 @@ body {
   font-size: 10px;
   color: #666;
   text-align: right;
+  margin-top: 2px;
 }
 
+/* =====================
+   INPUT
+===================== */
 .input-area {
   display: flex;
   padding: 10px;
@@ -137,9 +157,67 @@ body {
 
 input {
   flex: 1;
-  padding: 8px;
+  padding: 10px;
+  font-size: 14px;
 }
 
 button {
   margin-left: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+/* ======================================================
+   TABLET (≤ 900px)
+====================================================== */
+@media (max-width: 900px) {
+  .sidebar {
+    width: 35%;
+  }
+
+  .message {
+    max-width: 85%;
+  }
+}
+
+/* ======================================================
+   MOBILE (≤ 600px)
+====================================================== */
+@media (max-width: 600px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: 40%;
+    min-width: unset;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .chat {
+    height: 60%;
+  }
+
+  .chat-header {
+    padding: 8px;
+  }
+
+  .messages {
+    padding: 8px;
+  }
+
+  .message {
+    max-width: 90%;
+    font-size: 13px;
+  }
+
+  .input-area {
+    padding: 8px;
+  }
+
+  input {
+    font-size: 13px;
+  }
 }
