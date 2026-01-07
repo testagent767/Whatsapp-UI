@@ -14,7 +14,7 @@ body {
 }
 
 /* =====================
-   LEFT SIDEBAR
+   SIDEBAR
 ===================== */
 .sidebar {
   width: 30%;
@@ -60,7 +60,7 @@ body {
 }
 
 /* =====================
-   CHAT AREA
+   CHAT
 ===================== */
 .chat {
   width: 70%;
@@ -68,7 +68,7 @@ body {
   background: #efeae2;
 }
 
-/* FIXED HEADER */
+/* HEADER */
 .chat-header {
   position: fixed;
   top: 0;
@@ -79,9 +79,18 @@ body {
   color: white;
   padding: 10px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px;
   z-index: 10;
+}
+
+.back-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
 }
 
 .number {
@@ -90,18 +99,18 @@ body {
 }
 
 .toggle {
+  margin-left: auto;
   background: none;
   border: none;
   font-size: 22px;
   color: white;
-  cursor: pointer;
 }
 
-/* SCROLLABLE MESSAGES */
+/* MESSAGES */
 .messages {
   position: absolute;
   top: 60px;
-  bottom: 70px;
+  bottom: 80px;
   left: 0;
   right: 0;
   padding: 10px;
@@ -109,7 +118,7 @@ body {
 }
 
 .message {
-  max-width: 70%;
+  max-width: 75%;
   margin-bottom: 8px;
   padding: 10px;
   border-radius: 10px;
@@ -132,7 +141,7 @@ body {
   text-align: right;
 }
 
-/* FIXED INPUT */
+/* INPUT */
 .input-area {
   position: fixed;
   bottom: 0;
@@ -147,42 +156,53 @@ body {
 
 .input-area input {
   flex: 1;
-  min-height: 46px;
+  min-height: 48px;
   padding: 10px 14px;
   font-size: 16px;
-  border-radius: 23px;
+  border-radius: 24px;
   border: 1px solid #ccc;
 }
 
 .input-area button {
-  min-height: 46px;
+  min-height: 48px;
   padding: 0 20px;
-  border-radius: 23px;
+  border-radius: 24px;
   border: none;
   background: #25d366;
   color: white;
-  font-size: 15px;
 }
 
 /* =====================
-   MOBILE
+   MOBILE MODE
 ===================== */
 @media (max-width: 600px) {
   .app {
     flex-direction: column;
   }
 
-  .sidebar {
+  .sidebar,
+  .chat {
     width: 100%;
-    height: 100%;
   }
 
   .chat {
-    width: 100%;
+    display: none;
+  }
+
+  .chat.active {
+    display: block;
+  }
+
+  .sidebar.hidden {
+    display: none;
   }
 
   .chat-header,
   .input-area {
     width: 100%;
+  }
+
+  .back-btn {
+    display: block;
   }
 }
