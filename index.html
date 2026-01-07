@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<div class="app" id="app">
+<div class="app">
 
   <!-- LEFT -->
   <div class="sidebar" id="sidebar">
@@ -18,13 +18,13 @@
 
   <!-- RIGHT -->
   <div class="chat" id="chat">
+
+    <!-- STICKY HEADER -->
     <div class="chat-header">
-      <div class="header-left">
-        <button id="backBtn" class="back-btn">←</button>
-        <div>
-          <div id="chatName">Select a contact</div>
-          <div id="chatNumber" class="number"></div>
-        </div>
+      <button id="backBtn" class="back-btn">←</button>
+      <div class="chat-title">
+        <div id="chatName">Select a contact</div>
+        <div id="chatNumber" class="number"></div>
       </div>
       <button id="toggleBtn" class="toggle" disabled>🤖</button>
     </div>
@@ -35,6 +35,7 @@
       <input id="messageInput" placeholder="Type a message..." />
       <button id="sendBtn">Send</button>
     </div>
+
   </div>
 
 </div>
