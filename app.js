@@ -1,4 +1,3 @@
-
 const WEBHOOK =
   "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
@@ -6,34 +5,6 @@ let contacts = [];
 let selectedContact = null;
 let messagePoller = null;
 let contactPoller = null;
-
-/* =====================
-   HELPERS
-===================== */
-function isNearBottom(box) {
-  return box.scrollHeight - box.scrollTop - box.clientHeight < 100;
-}
-
-function scrollToBottom() {
-  const box = document.getElementById("messages");
-  box.scrollTop = box.scrollHeight;
-}
-
-function formatDateLabel(date) {
-  const d = new Date(date);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-
-  if (d.toDateString() === today.toDateString()) return "Today";
-  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
-
-  return d.toLocaleDateString(undefined, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 /* =====================
    LOAD CONTACTS
@@ -52,6 +23,7 @@ async function loadContacts() {
 }
 
 function startContactPolling() {
+  if (contactPoller) clearInterval(contactPoller);
   contactPoller = setInterval(loadContacts, 10000);
 }
 
@@ -65,6 +37,10 @@ function renderContacts() {
   contacts.forEach((c) => {
     const li = document.createElement("li");
     li.className = "contact";
+
+    if (selectedContact?.Phone_number === c.Phone_number) {
+      li.classList.add("active");
+    }
 
     li.onclick = () => selectContact(c);
 
@@ -87,12 +63,14 @@ async function selectContact(contact) {
   document.getElementById("chatName").innerText = contact.Name || "Unknown";
   document.getElementById("chatNumber").innerText = contact.Phone_number;
 
-  document.getElementById("toggleBtn").innerText =
-    contact.automate_response ? "🤖" : "✋";
+  updateToggle(contact.automate_response);
   document.getElementById("toggleBtn").disabled = false;
 
-  document.getElementById("app").classList.add("chat-open");
+  // mobile view
+  document.getElementById("sidebar").classList.add("hide");
+  document.getElementById("chat").classList.add("show");
 
+  // unread off
   if (contact.unread) {
     contact.unread = false;
     renderContacts();
@@ -115,42 +93,46 @@ async function selectContact(contact) {
    BACK BUTTON
 ===================== */
 document.getElementById("backBtn").onclick = () => {
-  document.getElementById("app").classList.remove("chat-open");
-  selectedContact = null;
-  if (messagePoller) clearInterval(messagePoller);
+  document.getElementById("sidebar").classList.remove("hide");
+  document.getElementById("chat").classList.remove("show");
 };
 
 /* =====================
-   LOAD MESSAGES WITH DATE SEPARATORS
+   TOGGLE AI
 ===================== */
-async function loadMessages(conversationId) {
-  const res = await fetch(`${WEBHOOK}?conversation_id=${conversationId}`);
+function updateToggle(isAuto) {
+  document.getElementById("toggleBtn").innerText = isAuto ? "🤖" : "✋";
+}
+
+document.getElementById("toggleBtn").onclick = async () => {
+  if (!selectedContact) return;
+
+  selectedContact.automate_response = !selectedContact.automate_response;
+  updateToggle(selectedContact.automate_response);
+
+  await fetch(WEBHOOK, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      conversation_id: selectedContact.Phone_number,
+      automate_response: selectedContact.automate_response,
+    }),
+  });
+};
+
+/* =====================
+   LOAD MESSAGES
+===================== */
+async function loadMessages(id) {
+  const res = await fetch(`${WEBHOOK}?conversation_id=${id}`);
   const data = await res.json();
 
   const box = document.getElementById("messages");
-  const shouldScroll = isNearBottom(box);
-
   box.innerHTML = "";
-
-  let lastDate = null;
 
   data
     .sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp))
-    .forEach((m) => {
-      const msgDate = new Date(m.Timestamp).toDateString();
-
-      if (msgDate !== lastDate) {
-        const sep = document.createElement("div");
-        sep.className = "date-separator";
-        sep.innerText = formatDateLabel(m.Timestamp);
-        box.appendChild(sep);
-        lastDate = msgDate;
-      }
-
-      renderMessage(m);
-    });
-
-  if (shouldScroll) scrollToBottom();
+    .forEach(renderMessage);
 }
 
 function renderMessage(m) {
@@ -160,8 +142,8 @@ function renderMessage(m) {
   div.className = `message ${m.direction === "outbound" ? "outbound" : "inbound"}`;
 
   div.innerHTML = `
-    <div>${m.Text || m.text || ""}</div>
-    <div class="time">${new Date(m.Timestamp || m.timestamp).toLocaleTimeString()}</div>
+    <div>${m.Text}</div>
+    <div class="time">${new Date(m.Timestamp).toLocaleTimeString()}</div>
   `;
 
   box.appendChild(div);
@@ -190,12 +172,11 @@ document.getElementById("sendBtn").onclick = async () => {
   const timestamp = new Date().toISOString();
 
   renderMessage({
-    direction: "outbound",
     Text: text,
+    direction: "outbound",
     Timestamp: timestamp,
   });
 
-  scrollToBottom();
   input.value = "";
 
   await fetch(WEBHOOK, {
