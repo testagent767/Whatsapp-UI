@@ -19,6 +19,22 @@ function scrollToBottom() {
   box.scrollTop = box.scrollHeight;
 }
 
+function formatDateLabel(date) {
+  const d = new Date(date);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (d.toDateString() === today.toDateString()) return "Today";
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+
+  return d.toLocaleDateString(undefined, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 /* =====================
    LOAD CONTACTS
 ===================== */
@@ -35,11 +51,7 @@ async function loadContacts() {
   renderContacts();
 }
 
-/* =====================
-   CONTACT POLLING
-===================== */
 function startContactPolling() {
-  if (contactPoller) clearInterval(contactPoller);
   contactPoller = setInterval(loadContacts, 10000);
 }
 
@@ -53,13 +65,6 @@ function renderContacts() {
   contacts.forEach((c) => {
     const li = document.createElement("li");
     li.className = "contact";
-
-    if (
-      selectedContact &&
-      selectedContact.Phone_number === c.Phone_number
-    ) {
-      li.classList.add("active");
-    }
 
     li.onclick = () => selectContact(c);
 
@@ -79,13 +84,14 @@ function renderContacts() {
 async function selectContact(contact) {
   selectedContact = contact;
 
-  document.getElementById("chatName").innerText =
-    contact.Name || "Unknown";
-  document.getElementById("chatNumber").innerText =
-    contact.Phone_number || "";
+  document.getElementById("chatName").innerText = contact.Name || "Unknown";
+  document.getElementById("chatNumber").innerText = contact.Phone_number;
 
-  updateToggle(contact.automate_response);
+  document.getElementById("toggleBtn").innerText =
+    contact.automate_response ? "🤖" : "✋";
   document.getElementById("toggleBtn").disabled = false;
+
+  document.getElementById("app").classList.add("chat-open");
 
   if (contact.unread) {
     contact.unread = false;
@@ -106,32 +112,16 @@ async function selectContact(contact) {
 }
 
 /* =====================
-   TOGGLE
+   BACK BUTTON
 ===================== */
-function updateToggle(isAuto) {
-  document.getElementById("toggleBtn").innerText =
-    isAuto ? "🤖" : "✋";
-}
-
-document.getElementById("toggleBtn").onclick = async () => {
-  if (!selectedContact) return;
-
-  const newValue = !selectedContact.automate_response;
-  selectedContact.automate_response = newValue;
-  updateToggle(newValue);
-
-  await fetch(WEBHOOK, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      conversation_id: selectedContact.Phone_number,
-      automate_response: newValue,
-    }),
-  });
+document.getElementById("backBtn").onclick = () => {
+  document.getElementById("app").classList.remove("chat-open");
+  selectedContact = null;
+  if (messagePoller) clearInterval(messagePoller);
 };
 
 /* =====================
-   LOAD MESSAGES (NO FORCED SCROLL)
+   LOAD MESSAGES WITH DATE SEPARATORS
 ===================== */
 async function loadMessages(conversationId) {
   const res = await fetch(`${WEBHOOK}?conversation_id=${conversationId}`);
@@ -142,16 +132,27 @@ async function loadMessages(conversationId) {
 
   box.innerHTML = "";
 
+  let lastDate = null;
+
   data
     .sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp))
-    .forEach(renderMessage);
+    .forEach((m) => {
+      const msgDate = new Date(m.Timestamp).toDateString();
+
+      if (msgDate !== lastDate) {
+        const sep = document.createElement("div");
+        sep.className = "date-separator";
+        sep.innerText = formatDateLabel(m.Timestamp);
+        box.appendChild(sep);
+        lastDate = msgDate;
+      }
+
+      renderMessage(m);
+    });
 
   if (shouldScroll) scrollToBottom();
 }
 
-/* =====================
-   RENDER MESSAGE
-===================== */
 function renderMessage(m) {
   const box = document.getElementById("messages");
 
@@ -159,8 +160,8 @@ function renderMessage(m) {
   div.className = `message ${m.direction === "outbound" ? "outbound" : "inbound"}`;
 
   div.innerHTML = `
-    <div>${m.Text || ""}</div>
-    <div class="time">${new Date(m.Timestamp).toLocaleTimeString()}</div>
+    <div>${m.Text || m.text || ""}</div>
+    <div class="time">${new Date(m.Timestamp || m.timestamp).toLocaleTimeString()}</div>
   `;
 
   box.appendChild(div);
@@ -169,10 +170,10 @@ function renderMessage(m) {
 /* =====================
    MESSAGE POLLING
 ===================== */
-function startMessagePolling(conversationId) {
+function startMessagePolling(id) {
   if (messagePoller) clearInterval(messagePoller);
   messagePoller = setInterval(() => {
-    if (selectedContact) loadMessages(conversationId);
+    if (selectedContact) loadMessages(id);
   }, 2000);
 }
 
@@ -195,7 +196,6 @@ document.getElementById("sendBtn").onclick = async () => {
   });
 
   scrollToBottom();
-
   input.value = "";
 
   await fetch(WEBHOOK, {
