@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>WhatsApp UI</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -17,20 +16,21 @@
   </div>
 
   <!-- RIGHT -->
-  <div class="chat" id="chat">
+  <div class="chat">
 
-    <!-- STICKY HEADER -->
+    <!-- FIXED HEADER -->
     <div class="chat-header">
-      <button id="backBtn" class="back-btn">←</button>
-      <div class="chat-title">
+      <div>
         <div id="chatName">Select a contact</div>
         <div id="chatNumber" class="number"></div>
       </div>
       <button id="toggleBtn" class="toggle" disabled>🤖</button>
     </div>
 
+    <!-- SCROLLABLE MESSAGES -->
     <div id="messages" class="messages"></div>
 
+    <!-- FIXED INPUT -->
     <div class="input-area">
       <input id="messageInput" placeholder="Type a message..." />
       <button id="sendBtn">Send</button>
