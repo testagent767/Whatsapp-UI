@@ -1,3 +1,4 @@
+
 const WEBHOOK =
   "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
@@ -5,6 +6,18 @@ let contacts = [];
 let selectedContact = null;
 let messagePoller = null;
 let contactPoller = null;
+
+/* =====================
+   HELPERS
+===================== */
+function isNearBottom(box) {
+  return box.scrollHeight - box.scrollTop - box.clientHeight < 100;
+}
+
+function scrollToBottom() {
+  const box = document.getElementById("messages");
+  box.scrollTop = box.scrollHeight;
+}
 
 /* =====================
    LOAD CONTACTS
@@ -23,7 +36,7 @@ async function loadContacts() {
 }
 
 /* =====================
-   CONTACT POLLING (10s)
+   CONTACT POLLING
 ===================== */
 function startContactPolling() {
   if (contactPoller) clearInterval(contactPoller);
@@ -50,13 +63,10 @@ function renderContacts() {
 
     li.onclick = () => selectContact(c);
 
-    const isUnread =
-      c.unread === true || c.unread === "true";
-
     li.innerHTML = `
       <div class="contact-name">${c.Name || "Unknown"}</div>
       <div class="contact-preview">${c.Last_message_preview || ""}</div>
-      ${isUnread ? `<span class="unread-dot"></span>` : ""}
+      ${c.unread ? `<span class="unread-dot"></span>` : ""}
     `;
 
     list.appendChild(li);
@@ -77,8 +87,7 @@ async function selectContact(contact) {
   updateToggle(contact.automate_response);
   document.getElementById("toggleBtn").disabled = false;
 
-  // OPTIMISTIC UNREAD OFF
-  if (contact.unread === true || contact.unread === "true") {
+  if (contact.unread) {
     contact.unread = false;
     renderContacts();
 
@@ -92,13 +101,12 @@ async function selectContact(contact) {
     });
   }
 
-  renderContacts();
   await loadMessages(contact.Phone_number);
   startMessagePolling(contact.Phone_number);
 }
 
 /* =====================
-   TOGGLE 🤖 / ✋
+   TOGGLE
 ===================== */
 function updateToggle(isAuto) {
   document.getElementById("toggleBtn").innerText =
@@ -123,24 +131,22 @@ document.getElementById("toggleBtn").onclick = async () => {
 };
 
 /* =====================
-   LOAD MESSAGES
+   LOAD MESSAGES (NO FORCED SCROLL)
 ===================== */
 async function loadMessages(conversationId) {
-  const res = await fetch(
-    `${WEBHOOK}?conversation_id=${conversationId}`
-  );
+  const res = await fetch(`${WEBHOOK}?conversation_id=${conversationId}`);
   const data = await res.json();
 
   const box = document.getElementById("messages");
+  const shouldScroll = isNearBottom(box);
+
   box.innerHTML = "";
 
   data
-    .sort(
-      (a, b) => new Date(a.Timestamp) - new Date(b.Timestamp)
-    )
+    .sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp))
     .forEach(renderMessage);
 
-  box.scrollTop = box.scrollHeight;
+  if (shouldScroll) scrollToBottom();
 }
 
 /* =====================
@@ -150,64 +156,60 @@ function renderMessage(m) {
   const box = document.getElementById("messages");
 
   const div = document.createElement("div");
-  div.className = `message ${
-    m.direction === "outbound" ? "outbound" : "inbound"
-  }`;
+  div.className = `message ${m.direction === "outbound" ? "outbound" : "inbound"}`;
 
   div.innerHTML = `
     <div>${m.Text || ""}</div>
-    <div class="time">
-      ${new Date(m.Timestamp).toLocaleTimeString()}
-    </div>
+    <div class="time">${new Date(m.Timestamp).toLocaleTimeString()}</div>
   `;
 
   box.appendChild(div);
 }
 
 /* =====================
-   MESSAGE POLLING (2s)
+   MESSAGE POLLING
 ===================== */
 function startMessagePolling(conversationId) {
   if (messagePoller) clearInterval(messagePoller);
-
   messagePoller = setInterval(() => {
-    if (selectedContact) {
-      loadMessages(conversationId);
-    }
+    if (selectedContact) loadMessages(conversationId);
   }, 2000);
 }
 
 /* =====================
-   SEND MESSAGE (OPTIMISTIC)
+   SEND MESSAGE
 ===================== */
 document.getElementById("sendBtn").onclick = async () => {
+  if (!selectedContact) return;
+
   const input = document.getElementById("messageInput");
-  if (!input.value || !selectedContact) return;
+  const text = input.value.trim();
+  if (!text) return;
 
-  const temp = {
-    Text: input.value,
+  const timestamp = new Date().toISOString();
+
+  renderMessage({
     direction: "outbound",
-    Timestamp: new Date().toISOString(),
-  };
+    Text: text,
+    Timestamp: timestamp,
+  });
 
-  renderMessage(temp);
-
-  const payload = {
-    conversation_id: selectedContact.Phone_number,
-    from: "905452722489",
-    to: selectedContact.Phone_number,
-    text: temp.Text,
-    direction: "outbound",
-    status: "sent",
-    timestamp: temp.Timestamp,
-  };
+  scrollToBottom();
 
   input.value = "";
 
   await fetch(WEBHOOK, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      conversation_id: selectedContact.Phone_number,
+      from: "905452722489",
+      to: selectedContact.Phone_number,
+      text,
+      direction: "outbound",
+      status: "sent",
+      timestamp,
+    }),
   });
 
   loadContacts();
@@ -218,48 +220,3 @@ document.getElementById("sendBtn").onclick = async () => {
 ===================== */
 loadContacts();
 startContactPolling();
-
-
-
-
-/* =====================
-   SEND MESSAGE (DYNAMIC, CORRECT)
-===================== */
-document.getElementById("sendBtn").onclick = async () => {
-  if (!selectedContact) return;
-
-  const input = document.getElementById("messageInput");
-  const text = input.value.trim();
-  if (!text) return;
-
-  const payload = {
-    conversation_id: selectedContact.Phone_number, // dynamic
-    from: "905452722489",                           // dashboard number
-    to: selectedContact.Phone_number,               // dynamic
-    text: text,                                     // from input
-    direction: "outbound",
-    status: "sent",
-    timestamp: new Date().toISOString(),
-  };
-
-  // Optimistic UI
-  renderMessage({
-    direction: "outbound",
-    Text: text,
-    Timestamp: payload.timestamp,
-  });
-
-  input.value = "";
-
-  try {
-    await fetch(WEBHOOK, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-  } catch (err) {
-    console.error("Send failed", err);
-  }
-
-  loadContacts();
-};
