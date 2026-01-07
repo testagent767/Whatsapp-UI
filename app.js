@@ -64,6 +64,12 @@ async function selectContact(contact) {
     contact.automate_response ? "🤖" : "✋";
   document.getElementById("toggleBtn").disabled = false;
 
+  // MOBILE: show chat, hide sidebar
+  if (window.innerWidth <= 600) {
+    document.getElementById("sidebar").classList.add("hidden");
+    document.getElementById("chat").classList.add("active");
+  }
+
   if (contact.unread) {
     contact.unread = false;
     await fetch(WEBHOOK, {
@@ -82,12 +88,18 @@ async function selectContact(contact) {
 }
 
 /* =====================
-   LOAD MESSAGES (NO AUTOSCROLL)
+   BACK BUTTON (MOBILE)
 ===================== */
-async function loadMessages(conversationId) {
-  const res = await fetch(
-    `${WEBHOOK}?conversation_id=${conversationId}`
-  );
+document.getElementById("backBtn").onclick = () => {
+  document.getElementById("sidebar").classList.remove("hidden");
+  document.getElementById("chat").classList.remove("active");
+};
+
+/* =====================
+   LOAD MESSAGES
+===================== */
+async function loadMessages(id) {
+  const res = await fetch(`${WEBHOOK}?conversation_id=${id}`);
   const data = await res.json();
 
   const box = document.getElementById("messages");
@@ -108,16 +120,14 @@ function renderMessage(m) {
 
   div.innerHTML = `
     <div>${m.Text}</div>
-    <div class="time">
-      ${new Date(m.Timestamp).toLocaleTimeString()}
-    </div>
+    <div class="time">${new Date(m.Timestamp).toLocaleTimeString()}</div>
   `;
 
   box.appendChild(div);
 }
 
 /* =====================
-   POLLING (2s)
+   POLLING
 ===================== */
 function startMessagePolling(id) {
   if (messagePoller) clearInterval(messagePoller);
@@ -146,7 +156,7 @@ document.getElementById("sendBtn").onclick = async () => {
   });
 
   const box = document.getElementById("messages");
-  box.scrollTop = box.scrollHeight; // ✅ ONLY HERE
+  box.scrollTop = box.scrollHeight;
 
   input.value = "";
 
