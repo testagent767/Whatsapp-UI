@@ -8,20 +8,23 @@
 </head>
 <body>
 
-<div class="app">
+<div class="app" id="app">
 
   <!-- LEFT -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <h2>Chats</h2>
     <ul id="contactList"></ul>
   </div>
 
   <!-- RIGHT -->
-  <div class="chat">
+  <div class="chat" id="chat">
     <div class="chat-header">
-      <div>
-        <div id="chatName">Select a contact</div>
-        <div id="chatNumber" class="number"></div>
+      <div class="header-left">
+        <button id="backBtn" class="back-btn">←</button>
+        <div>
+          <div id="chatName">Select a contact</div>
+          <div id="chatNumber" class="number"></div>
+        </div>
       </div>
       <button id="toggleBtn" class="toggle" disabled>🤖</button>
     </div>
