@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,21 +17,24 @@
   </div>
 
   <!-- RIGHT -->
-  <div class="chat">
+  <div class="chat" id="chat">
 
     <!-- FIXED HEADER -->
     <div class="chat-header">
+      <button id="backBtn" class="back-btn">⬅</button>
+
       <div>
         <div id="chatName">Select a contact</div>
         <div id="chatNumber" class="number"></div>
       </div>
+
       <button id="toggleBtn" class="toggle" disabled>🤖</button>
     </div>
 
-    <!-- SCROLLABLE MESSAGES -->
+    <!-- MESSAGES -->
     <div id="messages" class="messages"></div>
 
-    <!-- FIXED INPUT -->
+    <!-- INPUT -->
     <div class="input-area">
       <input id="messageInput" placeholder="Type a message..." />
       <button id="sendBtn">Send</button>
