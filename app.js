@@ -1,16 +1,19 @@
-
 const WEBHOOK =
   "https://bjl82de9.rpcl.app/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
+const HEADERS = {
+  "Content-Type": "application/json",
+  "Authorization": "Bearer DEMO_TOKEN"
+};
+
 let contacts = [];
 let selectedContact = null;
-let messagePoller = null;
+let poller = null;
+let lastTimestamp = null;
 
-/* =====================
-   LOAD CONTACTS
-===================== */
+/* LOAD CONTACTS */
 async function loadContacts() {
-  const res = await fetch(WEBHOOK);
+  const res = await fetch(WEBHOOK, { headers: HEADERS });
   contacts = await res.json();
 
   contacts.sort(
@@ -26,18 +29,12 @@ function renderContacts() {
   const list = document.getElementById("contactList");
   list.innerHTML = "";
 
-  contacts.forEach((c) => {
+  contacts.forEach(c => {
     const li = document.createElement("li");
     li.className = "contact";
-
-    if (
-      selectedContact &&
-      selectedContact.Phone_number === c.Phone_number
-    ) {
+    if (selectedContact?.Phone_number === c.Phone_number) {
       li.classList.add("active");
     }
-
-    li.onclick = () => selectContact(c);
 
     li.innerHTML = `
       <div class="contact-name">${c.Name || "Unknown"}</div>
@@ -45,101 +42,77 @@ function renderContacts() {
       ${c.unread ? `<span class="unread-dot"></span>` : ""}
     `;
 
+    li.onclick = () => selectContact(c);
     list.appendChild(li);
   });
 }
 
-/* =====================
-   SELECT CONTACT
-===================== */
+/* SELECT CONTACT */
 async function selectContact(contact) {
   selectedContact = contact;
+  lastTimestamp = null;
 
-  document.getElementById("chatName").innerText =
-    contact.Name || "Unknown";
-  document.getElementById("chatNumber").innerText =
-    contact.Phone_number || "";
+  document.getElementById("chatName").innerText = contact.Name || "Unknown";
+  document.getElementById("chatNumber").innerText = contact.Phone_number;
 
-  document.getElementById("toggleBtn").innerText =
-    contact.automate_response ? "🤖" : "✋";
-  document.getElementById("toggleBtn").disabled = false;
+  document.getElementById("messages").innerHTML = "";
 
-  // MOBILE: show chat, hide sidebar
   if (window.innerWidth <= 600) {
     document.getElementById("sidebar").classList.add("hidden");
     document.getElementById("chat").classList.add("active");
   }
 
-  if (contact.unread) {
-    contact.unread = false;
-    await fetch(WEBHOOK, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        conversation_id: contact.Phone_number,
-        unread: false,
-      }),
-    });
-  }
-
-  renderContacts();
-  loadMessages(contact.Phone_number);
-  startMessagePolling(contact.Phone_number);
+  await loadMessages();
+  startPolling();
 }
 
-/* =====================
-   BACK BUTTON (MOBILE)
-===================== */
-document.getElementById("backBtn").onclick = () => {
-  document.getElementById("sidebar").classList.remove("hidden");
-  document.getElementById("chat").classList.remove("active");
-};
+/* LOAD MESSAGES (INCREMENTAL) */
+async function loadMessages() {
+  let url = `${WEBHOOK}?conversation_id=${selectedContact.Phone_number}`;
+  if (lastTimestamp) url += `&after=${encodeURIComponent(lastTimestamp)}`;
 
-/* =====================
-   LOAD MESSAGES
-===================== */
-async function loadMessages(id) {
-  const res = await fetch(`${WEBHOOK}?conversation_id=${id}`);
-  const data = await res.json();
+  const res = await fetch(url, { headers: HEADERS });
+  const messages = await res.json();
 
-  const box = document.getElementById("messages");
-  box.innerHTML = "";
-
-  data
+  messages
     .sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp))
-    .forEach(renderMessage);
+    .forEach(m => {
+      renderMessage(m);
+      lastTimestamp = m.Timestamp;
+    });
+
+  autoScroll();
 }
 
 function renderMessage(m) {
   const box = document.getElementById("messages");
-
   const div = document.createElement("div");
-  div.className = `message ${
-    m.direction === "outbound" ? "outbound" : "inbound"
-  }`;
 
+  div.className = `message ${m.direction === "outbound" ? "outbound" : "inbound"}`;
   div.innerHTML = `
     <div>${m.Text}</div>
-    <div class="time">${new Date(m.Timestamp).toLocaleTimeString()}</div>
+    <div class="time">${new Date(m.Timestamp).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit"
+    })}</div>
   `;
 
   box.appendChild(div);
 }
 
-/* =====================
-   POLLING
-===================== */
-function startMessagePolling(id) {
-  if (messagePoller) clearInterval(messagePoller);
-  messagePoller = setInterval(() => {
-    if (selectedContact) loadMessages(id);
-  }, 2000);
+/* AUTO SCROLL */
+function autoScroll() {
+  const box = document.getElementById("messages");
+  box.scrollTop = box.scrollHeight;
 }
 
-/* =====================
-   SEND MESSAGE
-   (SCROLL ONLY HERE)
-===================== */
+/* POLLING */
+function startPolling() {
+  if (poller) clearInterval(poller);
+  poller = setInterval(loadMessages, 3000);
+}
+
+/* SEND MESSAGE */
 document.getElementById("sendBtn").onclick = async () => {
   if (!selectedContact) return;
 
@@ -152,32 +125,33 @@ document.getElementById("sendBtn").onclick = async () => {
   renderMessage({
     Text: text,
     direction: "outbound",
-    Timestamp: timestamp,
+    Timestamp: timestamp
   });
 
-  const box = document.getElementById("messages");
-  box.scrollTop = box.scrollHeight;
-
+  lastTimestamp = timestamp;
   input.value = "";
 
   await fetch(WEBHOOK, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: HEADERS,
     body: JSON.stringify({
       conversation_id: selectedContact.Phone_number,
-      from: "905452722489",
+      from: 905452722489,
       to: selectedContact.Phone_number,
-      text,
+      Text: text,
       direction: "outbound",
-      status: "sent",
-      timestamp,
-    }),
+      Timestamp: timestamp
+    })
   });
 
   loadContacts();
 };
 
-/* =====================
-   INIT
-===================== */
+/* BACK BUTTON */
+document.getElementById("backBtn").onclick = () => {
+  document.getElementById("sidebar").classList.remove("hidden");
+  document.getElementById("chat").classList.remove("active");
+};
+
+/* INIT */
 loadContacts();
