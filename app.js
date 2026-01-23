@@ -1,3 +1,28 @@
+const PASSWORD = "123456"; // CHANGE THIS
+const TOKEN = "SECRET_TOKEN_ABC"; // MUST MATCH BACKEND
+
+let AUTH_HEADERS = null;
+
+document.getElementById("loginBtn").onclick = () => {
+  const input = document.getElementById("passwordInput").value;
+
+  if (input !== PASSWORD) {
+    document.getElementById("loginError").innerText = "Wrong password";
+    return;
+  }
+
+  AUTH_HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${TOKEN}`
+  };
+
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+
+  loadContacts();
+};
+
+
 const WEBHOOK =
   "https://bjl82de9.rpcl.app/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
