@@ -1,6 +1,6 @@
 
 const WEBHOOK =
-  "https://5wfq05ex.rpcld.cc/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
+  "https://bjl82de9.rpcl.app/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
 let contacts = [];
 let selectedContact = null;
