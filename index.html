@@ -7,25 +7,29 @@
 </head>
 <body>
 
-<div class="app">
+<!-- LOGIN -->
+<div id="login" class="login">
+  <h2>Enter Password</h2>
+  <input id="passwordInput" type="password" placeholder="Password" />
+  <button id="loginBtn">Login</button>
+  <div id="loginError" class="error"></div>
+</div>
 
-  <!-- SIDEBAR -->
+<!-- APP -->
+<div class="app hidden" id="app">
+
   <div class="sidebar" id="sidebar">
     <h2>Chats</h2>
     <ul id="contactList"></ul>
   </div>
 
-  <!-- CHAT -->
   <div class="chat" id="chat">
-
     <div class="chat-header">
       <button id="backBtn" class="back-btn">⬅</button>
-
       <div>
         <div id="chatName">Select a contact</div>
         <div id="chatNumber" class="number"></div>
       </div>
-
       <button id="toggleBtn" class="toggle" disabled>🤖</button>
     </div>
 
@@ -35,7 +39,6 @@
       <input id="messageInput" placeholder="Type a message..." />
       <button id="sendBtn">Send</button>
     </div>
-
   </div>
 
 </div>
