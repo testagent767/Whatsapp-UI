@@ -11,7 +11,9 @@ let selectedContact = null;
 let poller = null;
 let lastTimestamp = null;
 
-/* LOAD CONTACTS */
+/* =====================
+   LOAD CONTACTS
+===================== */
 async function loadContacts() {
   const res = await fetch(WEBHOOK, { headers: HEADERS });
   contacts = await res.json();
@@ -32,6 +34,7 @@ function renderContacts() {
   contacts.forEach(c => {
     const li = document.createElement("li");
     li.className = "contact";
+
     if (selectedContact?.Phone_number === c.Phone_number) {
       li.classList.add("active");
     }
@@ -47,13 +50,23 @@ function renderContacts() {
   });
 }
 
-/* SELECT CONTACT */
+/* =====================
+   SELECT CONTACT
+===================== */
 async function selectContact(contact) {
   selectedContact = contact;
   lastTimestamp = null;
 
-  document.getElementById("chatName").innerText = contact.Name || "Unknown";
-  document.getElementById("chatNumber").innerText = contact.Phone_number;
+  document.getElementById("chatName").innerText =
+    contact.Name || "Unknown";
+  document.getElementById("chatNumber").innerText =
+    contact.Phone_number;
+
+  // SET TOGGLE ICON
+  updateToggleIcon(contact.automate_reponse);
+
+  const toggleBtn = document.getElementById("toggleBtn");
+  toggleBtn.disabled = false;
 
   document.getElementById("messages").innerHTML = "";
 
@@ -66,10 +79,53 @@ async function selectContact(contact) {
   startPolling();
 }
 
-/* LOAD MESSAGES (INCREMENTAL) */
+/* =====================
+   TOGGLE HANDLER
+===================== */
+document.getElementById("toggleBtn").onclick = async () => {
+  if (!selectedContact) return;
+
+  const newValue = !selectedContact.automate_reponse;
+
+  // OPTIMISTIC UI UPDATE
+  selectedContact.automate_reponse = newValue;
+  updateToggleIcon(newValue);
+
+  // PATCH BACKEND
+  await fetch(WEBHOOK, {
+    method: "PATCH",
+    headers: HEADERS,
+    body: JSON.stringify({
+      conversation_id: selectedContact.Phone_number,
+      automate_reponse: newValue
+    })
+  });
+
+  // UPDATE CONTACT LIST STATE
+  const index = contacts.findIndex(
+    c => c.Phone_number === selectedContact.Phone_number
+  );
+  if (index !== -1) {
+    contacts[index].automate_reponse = newValue;
+  }
+};
+
+/* =====================
+   TOGGLE ICON UI
+===================== */
+function updateToggleIcon(value) {
+  const btn = document.getElementById("toggleBtn");
+  btn.innerText = value ? "🤖" : "✋";
+}
+
+/* =====================
+   LOAD MESSAGES (INCREMENTAL)
+===================== */
 async function loadMessages() {
   let url = `${WEBHOOK}?conversation_id=${selectedContact.Phone_number}`;
-  if (lastTimestamp) url += `&after=${encodeURIComponent(lastTimestamp)}`;
+  if (lastTimestamp) {
+    url += `&after=${encodeURIComponent(lastTimestamp)}`;
+  }
 
   const res = await fetch(url, { headers: HEADERS });
   const messages = await res.json();
@@ -88,31 +144,42 @@ function renderMessage(m) {
   const box = document.getElementById("messages");
   const div = document.createElement("div");
 
-  div.className = `message ${m.direction === "outbound" ? "outbound" : "inbound"}`;
+  div.className = `message ${
+    m.direction === "outbound" ? "outbound" : "inbound"
+  }`;
+
   div.innerHTML = `
     <div>${m.Text}</div>
-    <div class="time">${new Date(m.Timestamp).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit"
-    })}</div>
+    <div class="time">
+      ${new Date(m.Timestamp).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+      })}
+    </div>
   `;
 
   box.appendChild(div);
 }
 
-/* AUTO SCROLL */
+/* =====================
+   AUTO SCROLL
+===================== */
 function autoScroll() {
   const box = document.getElementById("messages");
   box.scrollTop = box.scrollHeight;
 }
 
-/* POLLING */
+/* =====================
+   POLLING
+===================== */
 function startPolling() {
   if (poller) clearInterval(poller);
   poller = setInterval(loadMessages, 3000);
 }
 
-/* SEND MESSAGE */
+/* =====================
+   SEND MESSAGE
+===================== */
 document.getElementById("sendBtn").onclick = async () => {
   if (!selectedContact) return;
 
@@ -147,11 +214,15 @@ document.getElementById("sendBtn").onclick = async () => {
   loadContacts();
 };
 
-/* BACK BUTTON */
+/* =====================
+   BACK BUTTON
+===================== */
 document.getElementById("backBtn").onclick = () => {
   document.getElementById("sidebar").classList.remove("hidden");
   document.getElementById("chat").classList.remove("active");
 };
 
-/* INIT */
+/* =====================
+   INIT
+===================== */
 loadContacts();
