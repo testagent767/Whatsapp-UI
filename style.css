@@ -13,9 +13,7 @@ body {
   height: 100vh;
 }
 
-/* =====================
-   SIDEBAR
-===================== */
+/* SIDEBAR */
 .sidebar {
   width: 30%;
   background: white;
@@ -59,9 +57,7 @@ body {
   top: 18px;
 }
 
-/* =====================
-   CHAT
-===================== */
+/* CHAT */
 .chat {
   width: 70%;
   position: relative;
@@ -90,7 +86,6 @@ body {
   border: none;
   color: white;
   font-size: 20px;
-  cursor: pointer;
 }
 
 .number {
@@ -156,25 +151,20 @@ body {
 
 .input-area input {
   flex: 1;
-  min-height: 48px;
-  padding: 10px 14px;
-  font-size: 16px;
-  border-radius: 24px;
+  padding: 10px;
+  border-radius: 20px;
   border: 1px solid #ccc;
 }
 
 .input-area button {
-  min-height: 48px;
   padding: 0 20px;
-  border-radius: 24px;
+  border-radius: 20px;
   border: none;
   background: #25d366;
   color: white;
 }
 
-/* =====================
-   MOBILE MODE
-===================== */
+/* MOBILE */
 @media (max-width: 600px) {
   .app {
     flex-direction: column;
