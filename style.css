@@ -1,3 +1,39 @@
+.hidden {
+  display: none;
+}
+
+.login {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #075e54;
+  color: white;
+}
+
+.login input {
+  padding: 12px;
+  margin: 10px 0;
+  width: 220px;
+  border-radius: 6px;
+  border: none;
+}
+
+.login button {
+  padding: 12px 20px;
+  border-radius: 6px;
+  border: none;
+  background: #25d366;
+  color: white;
+  cursor: pointer;
+}
+
+.error {
+  margin-top: 10px;
+  color: #ffcccc;
+}
+
 * {
   box-sizing: border-box;
 }
