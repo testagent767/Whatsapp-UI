@@ -7,23 +7,26 @@
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login" class="login">
-  <h2>Enter Password</h2>
-  <input id="passwordInput" type="password" placeholder="Password" />
-  <button id="loginBtn">Login</button>
-  <div id="loginError" class="error"></div>
+<!-- LOGIN OVERLAY -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <h3>Login</h3>
+    <input id="passwordInput" type="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+  </div>
 </div>
 
-<!-- APP -->
-<div class="app hidden" id="app">
+<div class="app">
 
+  <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
     <h2>Chats</h2>
     <ul id="contactList"></ul>
   </div>
 
+  <!-- CHAT -->
   <div class="chat" id="chat">
+
     <div class="chat-header">
       <button id="backBtn" class="back-btn">⬅</button>
       <div>
@@ -39,8 +42,8 @@
       <input id="messageInput" placeholder="Type a message..." />
       <button id="sendBtn">Send</button>
     </div>
-  </div>
 
+  </div>
 </div>
 
 <script src="app.js"></script>
