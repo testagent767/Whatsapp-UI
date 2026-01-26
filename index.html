@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>WhatsApp Panel</title>
+  <title>WhatsApp UI</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,23 +12,24 @@
   <div class="login-box">
     <h3>Login</h3>
     <input id="passwordInput" type="password" placeholder="Password" />
-    <button onclick="login()">Login</button>
-    <p id="loginError" class="error"></p>
+    <button id="loginBtn">Login</button>
+    <div id="loginError" class="error"></div>
   </div>
 </div>
 
 <div class="app">
 
   <!-- SIDEBAR -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <h2>Chats</h2>
     <ul id="contactList"></ul>
   </div>
 
   <!-- CHAT -->
-  <div class="chat">
+  <div class="chat" id="chat">
 
     <div class="chat-header">
+      <button id="backBtn" class="back-btn">⬅</button>
       <div>
         <div id="chatName">Select a contact</div>
         <div id="chatNumber" class="number"></div>
