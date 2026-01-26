@@ -13,22 +13,22 @@
     <h3>Login</h3>
     <input id="passwordInput" type="password" placeholder="Password" />
     <button onclick="login()">Login</button>
+    <p id="loginError" class="error"></p>
   </div>
 </div>
 
 <div class="app">
 
   <!-- SIDEBAR -->
-  <div class="sidebar" id="sidebar">
+  <div class="sidebar">
     <h2>Chats</h2>
     <ul id="contactList"></ul>
   </div>
 
   <!-- CHAT -->
-  <div class="chat" id="chat">
+  <div class="chat">
 
     <div class="chat-header">
-      <button id="backBtn" class="back-btn">⬅</button>
       <div>
         <div id="chatName">Select a contact</div>
         <div id="chatNumber" class="number"></div>
