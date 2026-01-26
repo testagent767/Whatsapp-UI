@@ -1,38 +1,42 @@
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
 }
 
 body {
-  height: 100vh;
-  background: #ece5dd;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
 }
 
-/* LOGIN */
+/* =====================
+   LOGIN
+===================== */
 .login-screen {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: #075e54;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 9999;
 }
 
 .login-box {
-  background: #fff;
-  padding: 25px;
-  width: 280px;
-  border-radius: 8px;
+  background: white;
+  padding: 24px;
+  border-radius: 10px;
+  width: 260px;
   text-align: center;
+}
+
+.login-box h3 {
+  margin-top: 0;
 }
 
 .login-box input {
   width: 100%;
   padding: 10px;
-  margin: 10px 0;
+  margin-bottom: 12px;
 }
 
 .login-box button {
@@ -40,106 +44,211 @@ body {
   padding: 10px;
   background: #25d366;
   border: none;
-  color: #fff;
+  color: white;
   cursor: pointer;
+  border-radius: 6px;
 }
 
 .error {
+  margin-top: 8px;
   color: red;
-  margin-top: 10px;
+  font-size: 13px;
 }
 
-/* APP */
+/* =====================
+   APP LAYOUT
+===================== */
 .app {
   display: flex;
   height: 100vh;
 }
 
-/* SIDEBAR */
+/* =====================
+   SIDEBAR
+===================== */
 .sidebar {
   width: 30%;
-  background: #fff;
+  background: white;
   border-right: 1px solid #ddd;
   overflow-y: auto;
 }
 
 .sidebar h2 {
-  padding: 15px;
+  margin: 0;
+  padding: 14px;
   background: #075e54;
-  color: #fff;
+  color: white;
 }
 
-.sidebar ul {
-  list-style: none;
-}
-
-.sidebar li {
+.contact {
   padding: 12px;
   cursor: pointer;
+  position: relative;
   border-bottom: 1px solid #eee;
 }
 
-.sidebar li:hover {
+.contact:hover {
   background: #f5f5f5;
 }
 
-/* CHAT */
+.contact.active {
+  background: #e6e6e6;
+}
+
+.contact-name {
+  font-weight: bold;
+}
+
+.contact-preview {
+  font-size: 12px;
+  color: #555;
+}
+
+.unread-dot {
+  width: 10px;
+  height: 10px;
+  background: #25d366;
+  border-radius: 50%;
+  position: absolute;
+  right: 14px;
+  top: 20px;
+}
+
+/* =====================
+   CHAT
+===================== */
 .chat {
   width: 70%;
   display: flex;
   flex-direction: column;
+  background: #efeae2;
+  position: relative;
 }
 
+/* =====================
+   HEADER
+===================== */
 .chat-header {
-  padding: 10px;
+  height: 60px;
   background: #075e54;
-  color: #fff;
+  color: white;
+  padding: 10px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px;
 }
 
+.back-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+}
+
+.number {
+  font-size: 12px;
+  color: #ddd;
+}
+
+.toggle {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: white;
+  cursor: pointer;
+}
+
+/* =====================
+   MESSAGES
+===================== */
 .messages {
   flex: 1;
-  padding: 15px;
+  padding: 12px;
   overflow-y: auto;
-  background: #e5ddd5;
 }
 
 .message {
+  max-width: 75%;
   margin-bottom: 10px;
-  max-width: 70%;
-  padding: 8px 12px;
-  border-radius: 8px;
-  clear: both;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  word-wrap: break-word;
 }
 
-.message.incoming {
-  background: #fff;
-  float: left;
+.inbound {
+  background: white;
+  border: 1px solid #ddd;
 }
 
-.message.outgoing {
+.outbound {
   background: #dcf8c6;
-  float: right;
+  margin-left: auto;
 }
 
+.time {
+  font-size: 10px;
+  color: #666;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* =====================
+   INPUT AREA
+===================== */
 .input-area {
+  height: 70px;
   display: flex;
+  gap: 10px;
   padding: 10px;
   background: #f0f0f0;
+  border-top: 1px solid #ddd;
 }
 
 .input-area input {
   flex: 1;
-  padding: 10px;
+  padding: 12px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
 }
 
 .input-area button {
-  padding: 10px 15px;
-  margin-left: 5px;
-  background: #25d366;
+  padding: 0 22px;
+  border-radius: 20px;
   border: none;
+  background: #25d366;
   color: white;
   cursor: pointer;
+}
+
+/* =====================
+   MOBILE
+===================== */
+@media (max-width: 600px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar,
+  .chat {
+    width: 100%;
+  }
+
+  .chat {
+    display: none;
+  }
+
+  .chat.active {
+    display: flex;
+  }
+
+  .sidebar.hidden {
+    display: none;
+  }
+
+  .back-btn {
+    display: block;
+  }
 }
