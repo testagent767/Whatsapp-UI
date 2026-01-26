@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>WhatsApp UI</title>
+  <title>WhatsApp Panel</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,13 +12,12 @@
   <div class="login-box">
     <h3>Login</h3>
     <input id="passwordInput" type="password" placeholder="Password" />
-    <button id="loginBtn">Login</button>
+    <button onclick="login()">Login</button>
     <div id="loginError" class="error"></div>
   </div>
 </div>
 
 <div class="app">
-
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
     <h2>Chats</h2>
@@ -27,7 +26,6 @@
 
   <!-- CHAT -->
   <div class="chat" id="chat">
-
     <div class="chat-header">
       <button id="backBtn" class="back-btn">⬅</button>
       <div>
@@ -43,10 +41,10 @@
       <input id="messageInput" placeholder="Type a message..." />
       <button id="sendBtn">Send</button>
     </div>
-
   </div>
 </div>
 
-<script src="app.js"></script>
+<script src="login.js"></script>
+<script src="whatsapp.js"></script>
 </body>
 </html>
