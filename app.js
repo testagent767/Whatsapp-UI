@@ -1,64 +1,59 @@
-const LOGIN_WEBHOOK = "https://bjl82de9.rpcl.app/webhook-test/login";
-const MAIN_WEBHOOK = "https://bjl82de9.rpcl.app/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
+const LOGIN_WEBHOOK = "https://bjl82de9.rpcl.app/webhook/login";
+const WEBHOOK =
+  "https://bjl82de9.rpcl.app/webhook/d7f6f778-8271-4ade-8b4f-2137cbf684b44";
 
-let AUTH_TOKEN = null;
+let TOKEN = localStorage.getItem("token");
 
-/* ================= LOGIN ================= */
-document.getElementById("loginBtn").onclick = login;
-
-async function login() {
-  const password = document.getElementById("passwordInput").value.trim();
-  const errorBox = document.getElementById("loginError");
-  errorBox.innerText = "";
-
-  if (!password) {
-    errorBox.innerText = "Password required";
-    return;
-  }
-
-  try {
-    const res = await fetch(LOGIN_WEBHOOK, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password })
-    });
-
-    const data = await res.json();
-
-    // IMPORTANT LOGIC
-    if (Array.isArray(data) && data[0]?.token) {
-      AUTH_TOKEN = data[0].token;
-      unlockApp();
-    } else {
-      errorBox.innerText = "Wrong password";
-    }
-
-  } catch (err) {
-    errorBox.innerText = "Server error";
-  }
-}
-
-function unlockApp() {
-  document.getElementById("loginScreen").style.display = "none";
-  document.querySelector(".app").classList.add("active");
-  loadContacts();
-}
-
-/* ================= HEADERS ================= */
-function authHeaders() {
+function getHeaders() {
   return {
     "Content-Type": "application/json",
-    "Authorization": "Bearer " + AUTH_TOKEN
+    "Authorization": "Bearer " + TOKEN
   };
 }
 
-/* ================= CONTACTS ================= */
+/* =====================
+   LOGIN
+===================== */
+async function login() {
+  const password = document.getElementById("passwordInput").value;
+
+  const res = await fetch(LOGIN_WEBHOOK, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password })
+  });
+
+  const data = await res.json();
+
+  // ✅ FIX: n8n ARRAY RESPONSE
+  if (Array.isArray(data) && data[0]?.token) {
+    TOKEN = data[0].token;
+    localStorage.setItem("token", TOKEN);
+    document.getElementById("loginScreen").style.display = "none";
+    loadContacts();
+  } else {
+    alert("Wrong password");
+  }
+}
+
+/* =====================
+   ORIGINAL LOGIC
+===================== */
 let contacts = [];
 let selectedContact = null;
+let poller = null;
+let lastTimestamp = null;
 
 async function loadContacts() {
-  const res = await fetch(MAIN_WEBHOOK, { headers: authHeaders() });
+  const res = await fetch(WEBHOOK, { headers: getHeaders() });
   contacts = await res.json();
+
+  contacts.sort(
+    (a, b) =>
+      new Date(b.Last_message_timestamp) -
+      new Date(a.Last_message_timestamp)
+  );
+
   renderContacts();
 }
 
@@ -69,14 +64,96 @@ function renderContacts() {
   contacts.forEach(c => {
     const li = document.createElement("li");
     li.className = "contact";
-    li.innerText = c.Name || c.Phone_number;
+
+    if (selectedContact?.Phone_number === c.Phone_number) {
+      li.classList.add("active");
+    }
+
+    li.innerHTML = `
+      <div class="contact-name">${c.Name || "Unknown"}</div>
+      <div class="contact-preview">${c.Last_message_preview || ""}</div>
+      ${c.unread ? `<span class="unread-dot"></span>` : ""}
+    `;
+
     li.onclick = () => selectContact(c);
     list.appendChild(li);
   });
 }
 
-function selectContact(c) {
-  selectedContact = c;
-  document.getElementById("chatName").innerText = c.Name || "Unknown";
-  document.getElementById("chatNumber").innerText = c.Phone_number;
+async function selectContact(contact) {
+  selectedContact = contact;
+  lastTimestamp = null;
+
+  document.getElementById("chatName").innerText =
+    contact.Name || "Unknown";
+  document.getElementById("chatNumber").innerText =
+    contact.Phone_number;
+
+  document.getElementById("messages").innerHTML = "";
+
+  if (window.innerWidth <= 600) {
+    document.getElementById("sidebar").classList.add("hidden");
+    document.getElementById("chat").classList.add("active");
+  }
+
+  await loadMessages();
+  startPolling();
+}
+
+async function loadMessages() {
+  let url = `${WEBHOOK}?conversation_id=${selectedContact.Phone_number}`;
+  if (lastTimestamp) {
+    url += `&after=${encodeURIComponent(lastTimestamp)}`;
+  }
+
+  const res = await fetch(url, { headers: getHeaders() });
+  const messages = await res.json();
+
+  messages
+    .sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp))
+    .forEach(m => {
+      renderMessage(m);
+      lastTimestamp = m.Timestamp;
+    });
+
+  autoScroll();
+}
+
+function renderMessage(m) {
+  const box = document.getElementById("messages");
+  const div = document.createElement("div");
+
+  div.className = `message ${
+    m.direction === "outbound" ? "outbound" : "inbound"
+  }`;
+
+  div.innerHTML = `
+    <div>${m.Text}</div>
+    <div class="time">
+      ${new Date(m.Timestamp).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+      })}
+    </div>
+  `;
+
+  box.appendChild(div);
+}
+
+function autoScroll() {
+  const box = document.getElementById("messages");
+  box.scrollTop = box.scrollHeight;
+}
+
+function startPolling() {
+  if (poller) clearInterval(poller);
+  poller = setInterval(loadMessages, 3000);
+}
+
+/* =====================
+   INIT
+===================== */
+if (TOKEN) {
+  document.getElementById("loginScreen").style.display = "none";
+  loadContacts();
 }
