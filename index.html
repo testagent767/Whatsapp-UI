@@ -1,51 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>WhatsApp UI</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<title>WhatsApp Panel</title>
+
+<style>
+/* ===== RESET ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+/* ===== PAGE ===== */
+body {
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* ===== WHATSAPP PANEL (ARKA TARAF) ===== */
+#app {
+  padding: 20px;
+}
+
+#app h1 {
+  color: #222;
+}
+
+/* ===== LOGIN OVERLAY ===== */
+#loginOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* ===== LOGIN BOX ===== */
+#loginBox {
+  background: #fff;
+  padding: 30px;
+  width: 320px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+#loginBox h2 {
+  margin-bottom: 20px;
+}
+
+#loginBox input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+#loginBox button {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  background: #25D366;
+  border: none;
+  color: white;
+  border-radius: 6px;
+}
+
+#error {
+  margin-top: 10px;
+  color: red;
+  font-size: 14px;
+  display: none;
+}
+</style>
 </head>
+
 <body>
 
-<!-- LOGIN OVERLAY -->
-<div id="loginScreen" class="login-screen">
-  <div class="login-box">
-    <h3>Login</h3>
-    <input id="passwordInput" type="password" placeholder="Password" />
+<!-- ===== LOGIN FLOATING ===== -->
+<div id="loginOverlay">
+  <div id="loginBox">
+    <h2>Login</h2>
+    <input type="password" id="password" placeholder="Enter password" />
     <button onclick="login()">Login</button>
+    <div id="error">Wrong password</div>
   </div>
 </div>
 
-<div class="app">
-
-  <!-- SIDEBAR -->
-  <div class="sidebar" id="sidebar">
-    <h2>Chats</h2>
-    <ul id="contactList"></ul>
-  </div>
-
-  <!-- CHAT -->
-  <div class="chat" id="chat">
-
-    <div class="chat-header">
-      <button id="backBtn" class="back-btn">⬅</button>
-      <div>
-        <div id="chatName">Select a contact</div>
-        <div id="chatNumber" class="number"></div>
-      </div>
-      <button id="toggleBtn" class="toggle" disabled>🤖</button>
-    </div>
-
-    <div id="messages" class="messages"></div>
-
-    <div class="input-area">
-      <input id="messageInput" placeholder="Type a message..." />
-      <button id="sendBtn">Send</button>
-    </div>
-
-  </div>
+<!-- ===== WHATSAPP PANEL ===== -->
+<div id="app">
+  <h1>WhatsApp Panel</h1>
+  <p>If you see this, login worked.</p>
 </div>
 
-<script src="app.js"></script>
+<script>
+const LOGIN_WEBHOOK = "https://bjl82de9.rpcl.app/webhook-test/login";
+
+async function login() {
+  const password = document.getElementById("password").value;
+  const error = document.getElementById("error");
+
+  error.style.display = "none";
+
+  try {
+    const res = await fetch(LOGIN_WEBHOOK, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ password })
+    });
+
+    const data = await res.json();
+
+    // n8n unauthorized
+    if (data.error === "unauthorized") {
+      error.style.display = "block";
+      return;
+    }
+
+    // token geldi
+    if (data.token) {
+      localStorage.setItem("AUTH_TOKEN", data.token);
+      document.getElementById("loginOverlay").style.display = "none";
+    }
+
+  } catch (e) {
+    error.style.display = "block";
+  }
+}
+</script>
+
 </body>
 </html>
