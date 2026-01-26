@@ -2,10 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>WhatsApp UI</title>
+  <title>WhatsApp Panel</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <h3>Login</h3>
+    <input id="passwordInput" type="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+  </div>
+</div>
 
 <div class="app">
 
@@ -20,12 +29,10 @@
 
     <div class="chat-header">
       <button id="backBtn" class="back-btn">⬅</button>
-
       <div>
         <div id="chatName">Select a contact</div>
         <div id="chatNumber" class="number"></div>
       </div>
-
       <button id="toggleBtn" class="toggle" disabled>🤖</button>
     </div>
 
@@ -37,7 +44,6 @@
     </div>
 
   </div>
-
 </div>
 
 <script src="app.js"></script>
